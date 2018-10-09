@@ -7,6 +7,7 @@ const userSchema = new Schema({
 		email: { type: String, required: true, index: true, unique: true },
 		userPic: String,
 		status: { type: String, enum: ['pending', 'accepted', 'rejected'] },
+		role: [{ type: String, enum: ["owner", "guest"] }],
 		specialDate: Date,
 		groups: { type: String, enum: ['family', 'friends', 'work', 'partner'] },
 	}, {

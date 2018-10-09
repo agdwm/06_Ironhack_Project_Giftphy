@@ -4,7 +4,7 @@ const Schema   = mongoose.Schema;
 const boardSchema = new Schema({
 	boardName: { type: String, required: true, index: true },
 	owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-	guests: [{ type: Schema.Types.ObjectId, ref: 'Guest' }],
+	guests: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 	groups: { type: String, enum: ['family', 'friends', 'work', 'partner'] },
 	privacy: {type: String, enum: ['public', 'shared', 'private']}
 }, {
