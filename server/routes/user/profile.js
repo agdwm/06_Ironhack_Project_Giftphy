@@ -1,8 +1,8 @@
 const express = require('express');
 const { ensureLoggedIn, ensureLoggedOut } = require('connect-ensure-login');
 const router = express.Router();
-const multer = require('multer');
-const User = require('../models/User');
+//const multer = require('multer');
+const User = require('../../models/User');
 
 
 // EDIT
