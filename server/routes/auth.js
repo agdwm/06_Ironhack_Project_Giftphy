@@ -2,7 +2,7 @@ const express = require('express');
 const passport = require('passport');
 const { ensureLoggedIn, ensureLoggedOut } = require('connect-ensure-login');
 const router = express.Router();
-//const multer = require('multer');
+
 const User = require('../models/User');
 
 // Bcrypt to encrypt passwords
@@ -48,7 +48,7 @@ router.get('/loggedin/', (req, res, next) => {
 router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 	
 	let {username,password, email} = req.body;
-	
+
 	username = username.toLowerCase().trim();
 	email = email.toLowerCase().trim();
 	password = password.toLowerCase().trim();
@@ -89,21 +89,6 @@ router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 				.catch(e => next(e));
 		}).catch(e => next(e))
 });
-
-// EDIT
-router.put('/edit/:id', ensureLoggedIn(), (req, res, next) => {
-	const {id} = req.params;
-	const {username} = req.body;
-	User.findByIdAndUpdate({_id:id}, {username}, {new:true})
-		.then( updatedUser => login(req, updatedUser)) 
-		.then( user => res.status(201).json({user:user, message: 'User updated'}))
-		.catch(e => next(e));
-});
-
-//UPLOAD
-// router.post('/upload', ensureLoggedIn(), upload.single('profile-pic'), (req, res, next) => {
-
-// });
 
 // LOGOUT
 router.get('/logout', ensureLoggedIn(), (req,res) => {
