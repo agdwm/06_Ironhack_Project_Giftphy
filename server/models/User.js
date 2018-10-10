@@ -5,11 +5,9 @@ const userSchema = new Schema({
 	name: { type: String, required: true, index: true, unique: true },
 	password: { type: String, required: true },
 	email: { type: String, required: true, index: true, unique: true },
-	userPic: String,
-	//status: { type: String, enum: ['pending', 'accepted', 'rejected'] },
+	userPic: { type: String, default: 'images/default-avatar.png' },
 	role: [{ type: String, enum: ["owner", "guest"] }],
-	specialDate: [Date],
-	//groups: [{ type: Schema.Types.ObjectId, ref: 'Group' }],
+	specialDates: [Date],
 }, {
 	timestamps: {
 		createdAt: 'created_at',
