@@ -2,10 +2,10 @@ const mongoose = require('mongoose');
 const Schema   = mongoose.Schema;
 
 const userSchema = new Schema({
-	name: { type: String, required: true, index: true, unique: true },
+	name: { type: String, required: true, index: true, unique: true, trim: true },
 	password: { type: String, required: true },
-	email: { type: String, required: true, index: true, unique: true },
-	userPic: { type: String, default: 'images/default-avatar.png' },
+	email: { type: String, required: true, index: true, unique: true, trim: true },
+	profilePic: { type: String, default: 'images/default-avatar.png' },
 	role: [{ type: String, enum: ["owner", "guest"] }],
 	specialDates: [Date],
 }, {

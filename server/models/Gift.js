@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 const Schema   = mongoose.Schema;
 
 const giftSchema = new Schema({
-	giftName: { type: String, required: true, index: true },
-	giftPic: String,
+	giftName: { type: String, required: true, index: true, trim: true },
+	giftPic: { type: String, default: 'images/default-gift.png' },
 	url: String,
 	location: { type: { type: String }, coordinates: [Number]},
 	description: String,
