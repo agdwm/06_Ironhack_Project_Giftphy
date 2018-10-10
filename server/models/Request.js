@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 const Schema   = mongoose.Schema;
 
-const boardSchema = new Schema({
-	boardName: { type: String, required: true, index: true },
+const requestSchema = new Schema({
 	owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+	guest: { type: Schema.Types.ObjectId, ref: 'User' },
 	group: { type: Schema.Types.ObjectId, ref: 'Group' },
-	privacy: {type: String, enum: ['public', 'shared', 'private']}
+	status: { type: String, enum: ['pending', 'accepted', 'rejected'] }
 }, {
 	timestamps: {
 		createdAt: 'created_at',
@@ -13,5 +13,5 @@ const boardSchema = new Schema({
 	}
 });
 
-const Board = mongoose.model('Board', boardSchema);
-module.exports = Board;
+const Request = mongoose.model('Request', requestSchema);
+module.exports = User;
