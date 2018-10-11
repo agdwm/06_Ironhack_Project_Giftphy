@@ -1,7 +1,7 @@
 const express = require('express');
-const { ensureLoggedIn, ensureLoggedOut } = require('connect-ensure-login');
 const router = express.Router();
-//const multer = require('multer');
+const { ensureLoggedIn, ensureLoggedOut } = require('connect-ensure-login');
+const uploadCloud = require('../../config/cloudinary');
 const User = require('../../models/User');
 
 
@@ -15,7 +15,10 @@ router.put('/edit/:id', ensureLoggedIn(), (req, res, next) => {
 		.catch(e => next(e));
 });
 
-//UPLOAD
-// router.post('/upload', ensureLoggedIn(), upload.single('profile-pic'), (req, res, next) => {
+//UPLOAD FILE
+router.post('/upload', ensureLoggedIn(), uploadCloud.single('profilePic'), (req, res, next) => {
+	console.log(req.params);
+	res.json(req.file)
+});
 
-// });
+module.exports = router;

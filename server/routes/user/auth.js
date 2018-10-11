@@ -1,7 +1,7 @@
 const express = require('express');
+const router = express.Router();
 const passport = require('passport');
 const { ensureLoggedIn, ensureLoggedOut } = require('connect-ensure-login');
-const router = express.Router();
 
 const User = require('../../models/User');
 
@@ -20,29 +20,6 @@ const login = (req, user) => {
 		})
 	})
 }
-
-// LOGIN
-router.post('/login', ensureLoggedOut(), (req, res, next) => {
-	passport.authenticate('local', (err, theUser, failureDetails) => {
-		// Check for errors
-		if (err) next(new Error('Something went wrong')); 
-		if (!theUser) next(failureDetails)
-
-		// Return user and logged in
-		login(req, theUser)
-			.then(user => res.status(200).json({user:req.user, message: 'User logged'}))
-			.catch(e => next(e));
-	})(req, res, next);
-});
-
-// LOGGEDIN
-router.get('/loggedin/', (req, res, next) => {
-	if (req.user) {
-	  	res.status(200).json({user:req.user, message:'User Logged in'});
-	} else {
-	  	next(new Error('Not logged in'));
-	}
-})
 
 // SIGNUP
 router.post('/signup', ensureLoggedOut(), (req, res, next) => {
@@ -89,6 +66,29 @@ router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 				.catch(e => next(e));
 		}).catch(e => next(e))
 });
+
+// LOGIN
+router.post('/login', ensureLoggedOut(), (req, res, next) => {
+	passport.authenticate('local', (err, theUser, failureDetails) => {
+		// Check for errors
+		if (err) next(new Error('Something went wrong')); 
+		if (!theUser) next(failureDetails)
+
+		// Return user and logged in
+		login(req, theUser)
+			.then(user => res.status(200).json({user:req.user, message: 'User logged'}))
+			.catch(e => next(e));
+	})(req, res, next);
+});
+
+// LOGGEDIN
+router.get('/loggedin/', (req, res, next) => {
+	if (req.user) {
+	  	res.status(200).json({user:req.user, message:'User Logged in'});
+	} else {
+	  	next(new Error('Not logged in'));
+	}
+})
 
 // LOGOUT
 router.get('/logout', ensureLoggedIn(), (req,res) => {
