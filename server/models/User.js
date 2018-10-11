@@ -24,7 +24,7 @@ const userSchema = new Schema({
 	},
 	profilePic: { 
 		type: String, 
-		default: 'images/default-avatar.png' },
+		default: 'images/default-avatar-500.png' },
 	role: [{ 
 		type: String, 
 		enum: ["owner", "guest"] 
@@ -39,6 +39,7 @@ const userSchema = new Schema({
 		updatedAt: 'updated_at'
 	}
 });
+
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;

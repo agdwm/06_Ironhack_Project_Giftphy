@@ -77,7 +77,8 @@ require('./passport')(app);
 
 // ROUTES
 app.use('/', require('./routes/index'));
-app.use('/auth', require('./routes/user/auth'));
-app.use('/profile', require('./routes/user/profile'));
+app.use('/auth', require('./routes/auth'));
+app.use('/users', require('./routes/users/users'))
+app.use('/users/profile', require('./routes/users/users'));
 
 module.exports = app;
