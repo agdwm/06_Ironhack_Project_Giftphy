@@ -1,16 +1,18 @@
-import React, { Component } from "react";
-import { Link } from "react-router-dom";
-import AuthService from "../auth/AuthService";
+import React, { Component } from 'react';
+import { NavLink } from 'react-router-dom';
+import AuthService from '../auth/AuthService';
 
 class Navbar extends Component {
 	constructor(props) {
 		super(props);
-		this.state = { loggedInUser: null };
+		this.state = { 
+			loggedInUser: null
+		};
 		this.service = new AuthService();
 	}
 
 	componentWillReceiveProps(nextProps) {
-		this.setState({ ...this.state, loggedInUser: nextProps["userInSession"] });
+		this.setState({ ...this.state, loggedInUser: nextProps['userInSession'] });
 	}
 
 	handleLogout = e => {
@@ -20,23 +22,18 @@ class Navbar extends Component {
 	render() {
 		if (this.state.loggedInUser) {
 			return (
-				<nav className="nav-style">
-				<ul>
-					<li>
-						<a href="#" onClick={this.handleLogout}>Logout</a>
-					</li>
-				</ul>
-
+				<div>
+				<NavLink exact to="/" activeClassName="selected" onClick={this.handleLogout}>Logout</NavLink>
 				<h2>Welcome, {this.state.loggedInUser.username}</h2>
-				</nav>
+				</div>
 			);
 		} else {
 			return (
 				<div>
-					<nav className="nav-style">
+					<nav className='nav-style'>
 						<ul>
-							<li><Link to="/signup">Signup</Link></li>
-							<li><Link to="/login">Login</Link></li>
+							<NavLink exact to='/signup' activeClassName="selected">Signup</NavLink>
+							<NavLink exact to='/login' activeClassName="selected">Login</NavLink>
 						</ul>
 					</nav>
 				</div>
