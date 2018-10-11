@@ -34,7 +34,7 @@ router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 		next(new Error('You must provide a valid email'));
 		return;
 	} else {
-		username = username.toLowerCase().trim();
+		username = username.trim();
 		email = email.toLowerCase().trim();
 		password = password.toLowerCase().trim();
 	}
@@ -63,7 +63,7 @@ router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 			newUser.save()
 				.then( user => res.status(201).json({user:user, message: 'User created'}))
 				.catch(e => next(e));
-		}).catch(e => next(e))
+		}).catch(e => next(e));
 });
 
 // LOGIN
