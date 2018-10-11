@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const { ensureLoggedIn, ensureLoggedOut } = require('connect-ensure-login');
-
 const User = require('../models/User');
 
 // Bcrypt to encrypt passwords
@@ -25,10 +24,6 @@ const login = (req, user) => {
 router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 	
 	let {username,password, email} = req.body;
-
-	username = username.toLowerCase().trim();
-	email = email.toLowerCase().trim();
-	password = password.toLowerCase().trim();
 	emailRegExp = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
 
 	// Check for non empty user or password
@@ -38,6 +33,10 @@ router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 	} else if(!emailRegExp.test(email)){
 		next(new Error('You must provide a valid email'));
 		return;
+	} else {
+		username = username.toLowerCase().trim();
+		email = email.toLowerCase().trim();
+		password = password.toLowerCase().trim();
 	}
   
 	// Check if user exists in DB

@@ -30,8 +30,8 @@ const userSchema = new Schema({
 		enum: ["owner", "guest"] 
 	}],
 	specialDates: [{ 
-		type: Date, 
-		default: Date.now
+		birthday: {type: Date},
+		aniversaire: {type: Date}
 	}],
 }, {
 	timestamps: {
