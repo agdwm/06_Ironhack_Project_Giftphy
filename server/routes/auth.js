@@ -24,13 +24,13 @@ const login = (req, user) => {
 router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 	
 	let {username,password, email} = req.body;
-	emailRegExp = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+	const email_pattern = new RegExp("/^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i");
 
 	// Check for non empty user or password
 	if (!username || !password || !email) {
 		next(new Error('You must provide valid credentials'));
 		return;
-	} else if(!emailRegExp.test(email)){
+	} else if(!email_pattern.test(email)){
 		next(new Error('You must provide a valid email'));
 		return;
 	} else {

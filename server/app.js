@@ -82,5 +82,6 @@ app.use('/users', require('./routes/users/users'));
 app.use('/profile', require('./routes/users/profile'));
 app.use('/boards', require('./routes/boards/boards'));
 app.use('/gifts', require('./routes/gifts/gifts'));
+app.use('/groups', require('./routes/groups/groups'));
 
 module.exports = app;
