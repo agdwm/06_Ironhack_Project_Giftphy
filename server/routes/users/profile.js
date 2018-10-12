@@ -53,15 +53,21 @@ router.patch('/edit/', ensureLoggedIn(), uploadCloud.single('profilePic'), (req,
 		})
 	}
 
-	//User.findOne({username})
-	
-	User.findByIdAndUpdate(id, {
-		username,
-		specialDates: specialDatesFormatted,
-		profilePic
-	}, {new:true})
-		.then(updatedUser => login(req, updatedUser)) 
-		.then(user => res.status(201).json({user:user, message: 'User updated'}))
+	User.findOne({username})
+		.then((user) => {
+			if (user && user._id !== id) {
+				return res.status(403).json({message: 'This username already exists'})
+			}
+			User.findByIdAndUpdate(id, {
+				username,
+				specialDates: specialDatesFormatted,
+				profilePic
+			}, {new:true})
+				.then(updatedUser => login(req, updatedUser)) 
+				.then(user => res.status(201).json({user:user, message: 'User updated'}))
+				.catch(e => next(e));
+			
+		})
 		.catch(e => next(e));
 });
 
