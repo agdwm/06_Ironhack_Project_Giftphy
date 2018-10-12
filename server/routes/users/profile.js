@@ -3,6 +3,7 @@ const router = express.Router();
 const { ensureLoggedIn} = require('connect-ensure-login');
 const uploadCloud = require('../../config/cloudinary');
 const User = require('../../models/User');
+const moment = require('moment');
 
 const login = (req, user) => {
 	return new Promise((resolve, reject) => {
@@ -27,19 +28,34 @@ router.get('/:id', ensureLoggedIn(), (req, res) => {
 })
 
 // EDIT
-//User.findOneAndUpdate({ user: req.user }
-router.patch('/edit/:id', ensureLoggedIn(), (req, res, next) => {
-	const {id} = req.params;
-	const {username, specialDates, profilePic} = req.body;
+router.patch('/edit/', ensureLoggedIn(), uploadCloud.single('profilePic'), (req, res, next) => {
+	const id = req.user._id;
+	const {username} = req.body;
+	let {specialDates} = req.body;
+	const profilePic = req.file.secure_url;
+	let specialDatesFormatted = [];
+
+	//FORMAT: [{"birthday":"1983-06-28"} ,{"aniversaire":"2005-11-26"}]
+	if (specialDates && specialDates !== '') {
+		specialDatesFormatted = JSON.parse(specialDates).map((date) => {
+			//if date is an Object
+			if (Object.prototype.toString.call(date) === '[object Object]') {
+				let key = Object.keys(date).toString();
+				let val;
+				if (moment(date).isValid()) {
+					val = new Date(Object.values(date));
+				} else {
+					throw new Error('The date format is not valid'); 
+				}
+				let dateFormatted = {[key] : val}
+				return dateFormatted;
+			}
+		})
+	}
+
+	//User.findOne({username})
 	
-	const specialDatesFormatted = specialDates.map((date) => {
-		let key = Object.keys(date).toString();
-		let val = new Date(Object.values(date));
-		let dateFormatted = {[key] : val}
-		return dateFormatted;
-	})
-	
-	User.findByIdAndUpdate({ _id: id }, {
+	User.findByIdAndUpdate(id, {
 		username,
 		specialDates: specialDatesFormatted,
 		profilePic
@@ -47,12 +63,6 @@ router.patch('/edit/:id', ensureLoggedIn(), (req, res, next) => {
 		.then(updatedUser => login(req, updatedUser)) 
 		.then(user => res.status(201).json({user:user, message: 'User updated'}))
 		.catch(e => next(e));
-});
-
-//UPLOAD FILE
-router.post('/upload/', ensureLoggedIn(), uploadCloud.single('profilePic'), (req, res, next) => {
-	console.log(req.params);
-	res.json(req.file) //all the cloudinary fields
 });
 
 //C(R)UD -> Retrieve ALL boards of an user (skip && limit)

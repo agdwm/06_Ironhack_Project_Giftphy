@@ -24,14 +24,15 @@ const userSchema = new Schema({
 	},
 	profilePic: { 
 		type: String, 
-		default: 'images/default-avatar-500.png' },
+		default: 'images/default-avatar-500.png' 
+	},
 	role: [{ 
 		type: String, 
 		enum: ["owner", "guest"] 
 	}],
 	specialDates: [{ 
-		birthday: {type: Date},
-		aniversaire: {type: Date}
+		// birthday: {type: Date},
+		// aniversaire: {type: Date}
 	}],
 }, {
 	timestamps: {

@@ -35,10 +35,6 @@ router.put('/edit/:id', ensureLoggedIn(), (req, res, next) => {
 		.catch(e => next(e));
 });
 
-//UPLOAD FILE
-router.post('/upload/', ensureLoggedIn(), uploadCloud.single('profilePic'), (req, res, next) => {
-	console.log(req.params);
-	res.json(req.file)
-});
+
 
 module.exports = router;
