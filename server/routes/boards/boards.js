@@ -7,9 +7,9 @@ const Board = require('../../models/Board');
 // (C)RUD -> Create a NEW Board
 router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	const { boardName, privacy } = req.body;
-	let user = req.user._id;
+	let owner = req.user;
 
-	const newBoard = new Board({ boardName, owner: user, privacy });
+	const newBoard = new Board({ boardName, owner, privacy });
 
 	newBoard.save()
 		.then((board) => {
@@ -19,9 +19,11 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 })
 
 
-//C(R)UD -> Retrieve ALL public boards sorted desc
-router.get('/', (req, res) => {
-	Board.find({privacy:'public'}).sort({updated_at:-1}).populate('owner')
+//C(R)UD -> Retrieve ALL (public, private) boards sorted desc
+router.get('/:pricacy', (req, res, next) => {
+	const {privacy} = req.params;
+
+	Board.find({privacy}).sort({updated_at:-1}).populate('owner')
 		.then((boards) => {
 			//boardName, GIFTS, owner, GUESTS
 			console.log('BOARDS', boards);
@@ -34,5 +36,15 @@ router.get('/', (req, res) => {
 //C(R)UD -> Retrieve ALL boards of an user (skip && limit)
 //Created in the profile route.
 
-//C(R)UD -> Retrieve ALL boards of a group
+//C(R)UD -> Retrieve ALL Boards of a Group
+router.get('/:groupName', (req, res, next) => {
+	const {groupName} = req.params;
+	
+	Board.find({group:groupName})
+		.then((boards) => {
+			res.status(200).json({boards});
+		})
+		.catch(e => next(e));
+});
+
 module.exports = router;

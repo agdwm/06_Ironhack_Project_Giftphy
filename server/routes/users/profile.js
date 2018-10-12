@@ -56,7 +56,7 @@ router.post('/upload/', ensureLoggedIn(), uploadCloud.single('profilePic'), (req
 });
 
 //C(R)UD -> Retrieve ALL boards of an user (skip && limit)
-router.get('/boards', (req, res) => {
+router.get('/boards', (req, res, next) => {
 	Board.find({ owner: req.user }).sort({boardName:1})
 		.then((boards) => {
 			res.status(200).json({boards});
