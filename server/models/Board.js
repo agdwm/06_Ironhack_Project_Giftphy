@@ -8,7 +8,8 @@ const boardSchema = new Schema({
 	privacy: { 
 		type: String, 
 		enum: ['public', 'restricted', 'private'], 
-		default:'public' }
+		default:'public' 
+	}
 }, {
 	timestamps: {
 		createdAt: 'created_at',

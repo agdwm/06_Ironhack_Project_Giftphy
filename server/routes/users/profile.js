@@ -32,8 +32,12 @@ router.patch('/edit/', ensureLoggedIn(), uploadCloud.single('profilePic'), (req,
 	const id = req.user._id;
 	const {username} = req.body;
 	let {specialDates} = req.body;
-	const profilePic = req.file.secure_url;
+	let profilePic = null;
 	let specialDatesFormatted = [];
+
+	if (req.file){
+		profilePic = req.file.secure_url;
+	} 
 
 	//FORMAT: [{"birthday":"1983-06-28"} ,{"aniversaire":"2005-11-26"}]
 	if (specialDates && specialDates !== '') {
