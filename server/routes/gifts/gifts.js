@@ -10,6 +10,7 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 	let user = req.user;
 	let boardSelected = req.body.board;
 	let board = null;
+	let newGift = null;
 	const url_pattern = new RegExp('((http|https)(:\/\/))?([a-zA-Z0-9]+[.]{1}){2}[a-zA-z0-9]+(\/{1}[a-zA-Z0-9]+)*\/?', 'i');
 	const { giftName, giftUrl, description } = req.body;
 	let { latitude, longitude, priority, status } = req.body; //latitude: 40.4195492 || longitude: -3.7048831,17
@@ -138,7 +139,17 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 		}
 	}
 
-	const setBoard = (board) => {
+	const createNewBoard = (boardSelected) => {
+		const newBoard = new Board({ 
+			boardName: boardSelected.boardName,
+			owner: user,
+			privacy: boardSelected.privacy
+			//group
+		});
+		return newBoard;
+	}
+
+	const createGift = (board) => {
 		const newGift = new Gift({
 			giftName,
 			giftPic,
@@ -152,22 +163,17 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 			status,
 			board
 		});
+		return newGift;
+	}
 
-		newGift.save()
+	const saveGift = (gift) => {
+		gift.save()
 			.then((gift) => {
-				res.status(200).json({gift})
+				res.status(201).json({gift})
 			})
 			.catch(e => next(e));
 	}
 
-	const createNewBoard = (boardSelected) => {
-		const newBoard = new Board({ 
-			boardName: boardSelected.boardName,
-			owner: user,
-			privacy: boardSelected.privacy
-		});
-		return newBoard;
-	}
 
 	const giftParams = [giftName, giftPic, giftUrl, latitude, longitude, description, priority, status];
 	
@@ -186,7 +192,8 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 						}
 						
 						if (board) {
-							setBoard(board);
+							newGift = createGift(board);
+							saveGift(newGift);
 						} else {
 							res.status(403).json({message: 'The selected board is not valid'});
 						}
@@ -200,18 +207,18 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 					.then(boards => {
 						//Does the user have a board with the same name?
 						if (boards && boards.length !== 0) {
-							board = boards.find((thisBoard) => {
-								return thisBoard.boardName == boardSelected.boardName
+							newBoard = boards.find((thisBoard) => {
+								return thisBoard.boardName == newBoard.boardName;
 							})
 						}
 
-						if (board) {
+						if (newBoard) {
 							res.status(403).json({message: 'You already have a board with this name'});
 						} else {
-							board = newBoard;
 							newBoard.save()
-								.then((board) => {
-									setBoard(board);
+								.then((newBoard) => {
+									newGift = createGift(newBoard);
+									saveGift(newGift);
 								})
 								.catch(e => next(e));
 						}
