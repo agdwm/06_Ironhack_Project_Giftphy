@@ -11,12 +11,13 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 	let boardSelected = req.body.board;
 	let board = null;
 	const url_pattern = new RegExp('((http|https)(:\/\/))?([a-zA-Z0-9]+[.]{1}){2}[a-zA-z0-9]+(\/{1}[a-zA-Z0-9]+)*\/?', 'i');
-	const { giftName, giftUrl, description } = req.body;
-	let { latitude, longitude } = req.body; //latitude: 40.4195492 || longitude: -3.7048831,17
+	const { giftName, giftUrl, description, status } = req.body;
+	let { latitude, longitude, priority } = req.body; //latitude: 40.4195492 || longitude: -3.7048831,17
 	let giftPic = null;
 	const image_default = 'images/default-gift-500.png';
 	const desc_limitWords = 400;
-	
+	const priority_allowed = ['1', '2', '3', '4', '5'];
+	const status_allowed = ['checked', 'unchecked'];
 	
 	// GIFTS VALIDATIONS
 	const isGiftNameValid = (gName) => { return gName && gName !== '';}
@@ -46,15 +47,48 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 			}
 		}
 	}
+	const isGiftPriorityValid = (prior) => {
+		if (prior && prior !== '' ) {
+			if (typeof prior === 'string') {
+				if (priority_allowed.includes(prior[0])){
+					return true;
+				}
+			} else {
+				return false
+			}
+			
+		} else {
+			console.log('The priority is empty');
+		}
+	}
+	const isGiftStatusValid = (stat) => {
+		if (stat && stat !== '' ) {
+			if (typeof stat === 'string') {
+				if (status_allowed.includes(stat)){
+					return true;
+				}else{
+					return false;
+				}
+			}
+		}
+	}
 
 	// GIFT VALID ?
-	const isGiftValid = (giftName, giftPic, giftUrl, latitude, longitude, description) => {
+	const isGiftValid = (giftName, giftPic, giftUrl, latitude, longitude, description, priority, status) => {
 		if (isGiftNameValid(giftName)) {
 			if (isGiftPicValid(giftPic)) {
 				if (isGiftUrlValid(giftUrl)) {
 					if (isGiftLatValid(latitude) && isGiftLongValid(longitude)) {
 						if (isGiftDescValid(description)) {
-							return true;
+							if (isGiftPriorityValid(priority)) {
+								if (isGiftStatusValid(status)) {
+								 	return true;
+								} else {
+									res.status(403).json({message: `The priority must be: 'checked', 'unchecked'`});
+								}
+							} else{
+								res.status(403).json({message: `The priority must be a number between 1 - 5`});
+							}
 						} else {
 							res.status(403).json({message: `The description exceeds the limit of words allowed (${desc_limitWords})`});
 						}
@@ -103,6 +137,7 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 				coordinates: [Number(latitude), Number(longitude)]
 			},
 			description,
+			priority,
 			board
 		});
 
@@ -122,16 +157,17 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 		return newBoard;
 	}
 
-	if (isGiftValid(giftName, giftPic, giftUrl, latitude, longitude, description)) {
-		// Formatted some params
+	if (isGiftValid(giftName, giftPic, giftUrl, latitude, longitude, description, priority, status)) {
+		// Formatted some valid params before saving
 		if (req.file && req.file.secure_url) {
 			giftPic = req.file.secure_url;
 		} else {
 			giftPic = image_default;
 		}
-
 		latitude = parseFloat(latitude);
 		longitude = parseFloat(longitude);
+
+		priority = parseInt(priority[0]);
 
 		if (isBoardValid(boardSelected)) {
 			boardSelected = JSON.parse(boardSelected);
