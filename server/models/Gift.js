@@ -4,7 +4,7 @@ const Schema   = mongoose.Schema;
 const giftSchema = new Schema({
 	giftName: { type: String, required: true, index: true, trim: true },
 	giftPic: { type: String, default: 'images/default-gift-500.png' },
-	buyUrl: String,
+	giftUrl: String,
 	location: { 
 		type: { type: String }, 
 		coordinates: [Number]

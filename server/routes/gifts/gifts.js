@@ -9,27 +9,24 @@ const Board = require('../../models/Board');
 router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, next) => {
 	let user = req.user;
 	let boardSelected = req.body.board;
-	const url_pattern = new RegExp("((http|https)(:\/\/))?([a-zA-Z0-9]+[.]{1}){2}[a-zA-z0-9]+(\/{1}[a-zA-Z0-9]+)*\/?", "i");
-	const { giftName, buyUrl } = req.body;
+	const url_pattern = new RegExp('((http|https)(:\/\/))?([a-zA-Z0-9]+[.]{1}){2}[a-zA-z0-9]+(\/{1}[a-zA-Z0-9]+)*\/?', 'i');
+	const { giftName, giftUrl } = req.body;
 	let { latitude, longitude } = req.body; //latitude: 40.4195492 || longitude: -3.7048831,17
+	let giftPic = null;
+	const image_default = 'images/default-gift-500.png';
 	
-	//let board = null;
-	//let giftPic = null;
-	
-	const isGiftNameValid = (name) => {
-		return name && name !== '';
-	}
-	const isBuyUrlValid = (url) => {
-		return url_pattern.test(url);
-	}
-	const isLatValid = (lat) => {
+	// GIFTS VALIDATIONS
+	const isGiftNameValid = (gName) => { return gName && gName !== '';}
+	const isGiftPicValid = (gPic) => { return !gPic || gPic !== ''; }
+	const isGiftUrlValid = (gUrl) => { return url_pattern.test(gUrl); }
+	const isGiftLatValid = (lat) => {
 		if (lat && lat !== '') {
 			return parseFloat(lat);
 		}  else {
 			console.log('Latitude is not defined')
 		}
 	}
-	const isLongValid = (long) => {
+	const isGiftLongValid = (long) => {
 		if (long && long !== '' ) {
 			return parseFloat(long);
 		} else {
@@ -37,26 +34,36 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 		}
 	}
 
-	// 1. Validar Gift
-	const isGiftValid = (giftName, buyUrl, latitude, longitude) => {
+	const isGiftValid = (giftName, giftPic, giftUrl, latitude, longitude) => {
 		if (isGiftNameValid(giftName)) {
-			if (isBuyUrlValid(buyUrl)) {
-				if (isLatValid(latitude) && isLongValid(longitude)) {
-					latitude = parseFloat(latitude);
-					longitude = parseFloat(longitude);
-					return true;
+			if (isGiftPicValid(giftPic)) {
+				//set gift pic
+				if (req.file && req.file.secure_url) {
+					giftPic = req.file.secure_url;
+					console.log(giftPic)
 				} else {
-					res.status(403).json({message: 'Latitud or longitud must be valid values'})
+					giftPic = image_default;
+					console.log(giftPic)
+				}
+				if (isGiftUrlValid(giftUrl)) {
+					if (isGiftLatValid(latitude) && isGiftLongValid(longitude)) {
+						latitude = parseFloat(latitude);
+						longitude = parseFloat(longitude);
+						return true;
+					} else {
+						res.status(403).json({message: 'Latitud or longitud must be valid values'});
+					}
+				} else {
+					res.status(403).json({message: 'The shop url must be an url valid'});
 				}
 			} else {
-				res.status(403).json({message: 'The shop url must be an url valid'})
+				res.status(403).json({message: 'The gift image must have a valid type'});
 			}
 		} else {
-			res.status(403).json({message: 'Gift name is required'})
+			res.status(403).json({message: 'Gift name is required'});
 		}
 	}
 
-	// 2. Validar Board
 	const isBoardValid = (boardSelected) => {
 		if (boardSelected && boardSelected !== '') {
 			try {
@@ -69,21 +76,81 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 			res.status(403).json({message: 'Board is required'}) 
 		}
 	}
-	
 
-	// 3. Guardar Regalo (guardar Board)
-	if (isGiftValid(giftName, buyUrl, latitude, longitude)) {
-		if (isBoardValid(boardSelected)) {
-			console.log('SI VALID-----------', boardSelected);
-			boardSelected = JSON.parse(boardSelected);
-		}else{
-			console.log('NOT VALID-----------', boardSelected);
-		}
-	} else{
+	const setBoard = (board) => {
+		const newGift = new Gift({
+			giftName, 
+			giftPic,
+			giftUrl,
+			location: {
+				type: 'Point',
+				coordinates: [Number(latitude), Number(longitude)]
+			}, 
+			board
+		});
 
+		newGift.save()
+			.then((gift) => {
+				res.status(200).json({gift})
+			})
+			.catch(e => next(e));
 	}
-	
-})
 
+	const createNewBoard = (boardSelected) => {
+		const newBoard = new Board({ 
+			boardName: boardSelected.boardName,
+			owner: user,
+			privacy: boardSelected.privacy
+		});
+		return newBoard;
+	}
+
+	if (isGiftValid(giftName, giftPic, giftUrl, latitude, longitude)) {
+		if (isBoardValid(boardSelected)) {
+			boardSelected = JSON.parse(boardSelected);
+			// It is one of the user's boards
+			if (boardSelected._id) {
+				// Check just in case
+				Board.find({owner:user})
+					.then(boards => {
+						if (boards && boards.length !== 0) {
+							board = boards.find((thisBoard) => {
+								return thisBoard._id == boardSelected._id
+							})
+						}
+						
+						if (board) {
+							setBoard(board);
+						} else {
+							res.status(403).json({message: 'The selected board is not valid'});
+						}
+					})
+					.catch(e => next(e));
+			} else {
+				// It is a new board
+				const newBoard = createNewBoard(boardSelected);
+				Board.find({owner:user})
+					.then(boards => {
+						//Does the user have a board with the same name?
+						if (boards && boards.length !== 0) {
+							board = boards.find((thisBoard) => {
+								return thisBoard.boardName == boardSelected.boardName
+							})
+						}
+						if (board) {
+							res.status(403).json({message: 'You already have a board with this name'});
+						} else {
+							newBoard.save()
+								.then((board) => {
+									setBoard(board);
+								})
+								.catch(e => next(e));
+						}
+					})
+					.catch(e => next(e));
+			}
+		}
+	}
+})
 
 module.exports = router;
