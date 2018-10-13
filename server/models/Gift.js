@@ -9,7 +9,7 @@ const giftSchema = new Schema({
 		type: { type: String }, 
 		coordinates: [Number]
 	},
-	description: String,
+	description:  { type: String, maxlength: 400 }, 
 	priority: { type: Number, enum:[1, 2, 3, 4, 5] },
 	status: { type: String, enum: ['checked', 'unchecked'], default:'unchecked' },
 	board: { type: Schema.Types.ObjectId, ref: 'Board', required: true, index: true },

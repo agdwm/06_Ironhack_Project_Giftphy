@@ -9,11 +9,14 @@ const Board = require('../../models/Board');
 router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, next) => {
 	let user = req.user;
 	let boardSelected = req.body.board;
+	let board = null;
 	const url_pattern = new RegExp('((http|https)(:\/\/))?([a-zA-Z0-9]+[.]{1}){2}[a-zA-z0-9]+(\/{1}[a-zA-Z0-9]+)*\/?', 'i');
-	const { giftName, giftUrl } = req.body;
+	const { giftName, giftUrl, description } = req.body;
 	let { latitude, longitude } = req.body; //latitude: 40.4195492 || longitude: -3.7048831,17
 	let giftPic = null;
 	const image_default = 'images/default-gift-500.png';
+	const desc_limitWords = 400;
+	
 	
 	// GIFTS VALIDATIONS
 	const isGiftNameValid = (gName) => { return gName && gName !== '';}
@@ -33,23 +36,28 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 			console.log('Longitude is not defined')
 		}
 	}
+	const isGiftDescValid = (desc) => {
+		if (desc && desc !== '') {
+			const totalWords = desc.split(/\s+\b/).length;
+			if (totalWords >= desc_limitWords) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+	}
 
-	const isGiftValid = (giftName, giftPic, giftUrl, latitude, longitude) => {
+	// GIFT VALID ?
+	const isGiftValid = (giftName, giftPic, giftUrl, latitude, longitude, description) => {
 		if (isGiftNameValid(giftName)) {
 			if (isGiftPicValid(giftPic)) {
-				//set gift pic
-				if (req.file && req.file.secure_url) {
-					giftPic = req.file.secure_url;
-					console.log(giftPic)
-				} else {
-					giftPic = image_default;
-					console.log(giftPic)
-				}
 				if (isGiftUrlValid(giftUrl)) {
 					if (isGiftLatValid(latitude) && isGiftLongValid(longitude)) {
-						latitude = parseFloat(latitude);
-						longitude = parseFloat(longitude);
-						return true;
+						if (isGiftDescValid(description)) {
+							return true;
+						} else {
+							res.status(403).json({message: `The description exceeds the limit of words allowed (${desc_limitWords})`});
+						}
 					} else {
 						res.status(403).json({message: 'Latitud or longitud must be valid values'});
 					}
@@ -78,14 +86,23 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 	}
 
 	const setBoard = (board) => {
+		console.log('** ---------------------------------------------------- **')
+		console.log('GIF NAME', giftName)
+		console.log('GIF PIC', giftPic)
+		console.log('GIFT URL', giftUrl)
+		console.log('LATITUDE', latitude)
+		console.log('LONGITUDE', longitude)
+		console.log('BOARD', board)
+		console.log('** ---------------------------------------------------- **')
 		const newGift = new Gift({
-			giftName, 
+			giftName,
 			giftPic,
 			giftUrl,
 			location: {
 				type: 'Point',
 				coordinates: [Number(latitude), Number(longitude)]
-			}, 
+			},
+			description,
 			board
 		});
 
@@ -105,7 +122,17 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 		return newBoard;
 	}
 
-	if (isGiftValid(giftName, giftPic, giftUrl, latitude, longitude)) {
+	if (isGiftValid(giftName, giftPic, giftUrl, latitude, longitude, description)) {
+		// Formatted some params
+		if (req.file && req.file.secure_url) {
+			giftPic = req.file.secure_url;
+		} else {
+			giftPic = image_default;
+		}
+
+		latitude = parseFloat(latitude);
+		longitude = parseFloat(longitude);
+
 		if (isBoardValid(boardSelected)) {
 			boardSelected = JSON.parse(boardSelected);
 			// It is one of the user's boards
@@ -129,6 +156,7 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 			} else {
 				// It is a new board
 				const newBoard = createNewBoard(boardSelected);
+				
 				Board.find({owner:user})
 					.then(boards => {
 						//Does the user have a board with the same name?
@@ -137,9 +165,11 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 								return thisBoard.boardName == boardSelected.boardName
 							})
 						}
+
 						if (board) {
 							res.status(403).json({message: 'You already have a board with this name'});
 						} else {
+							board = newBoard;
 							newBoard.save()
 								.then((board) => {
 									setBoard(board);
