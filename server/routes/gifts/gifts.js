@@ -11,20 +11,32 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 	let boardSelected = req.body.board;
 	let board = null;
 	const url_pattern = new RegExp('((http|https)(:\/\/))?([a-zA-Z0-9]+[.]{1}){2}[a-zA-z0-9]+(\/{1}[a-zA-Z0-9]+)*\/?', 'i');
-	const { giftName, giftUrl, description, status } = req.body;
-	let { latitude, longitude, priority } = req.body; //latitude: 40.4195492 || longitude: -3.7048831,17
+	const { giftName, giftUrl, description } = req.body;
+	let { latitude, longitude, priority, status } = req.body; //latitude: 40.4195492 || longitude: -3.7048831,17
 	let giftPic = null;
 	const image_default = 'images/default-gift-500.png';
+	//ALLOWED VALUES
 	const desc_limitWords = 400;
-	const priority_allowed = ['1', '2', '3', '4', '5'];
+	const priority_allowed = [1, 2, 3, 4, 5];
 	const status_allowed = ['checked', 'unchecked'];
 	
 	// GIFTS VALIDATIONS
 	const isGiftNameValid = (gName) => { return gName && gName !== '';}
-	const isGiftPicValid = (gPic) => { return !gPic || gPic !== ''; }
+	const isGiftPicValid = (gPic) => { 
+		if (gPic && gPic !== '') {
+			if (req.file && req.file.secure_url) {
+				giftPic = req.file.secure_url;
+				return true;
+			}
+		} else {
+			giftPic = image_default;
+			return true;
+		}
+	}
 	const isGiftUrlValid = (gUrl) => { return url_pattern.test(gUrl); }
 	const isGiftLatValid = (lat) => {
 		if (lat && lat !== '') {
+			latitude = parseFloat(latitude);
 			return parseFloat(lat);
 		}  else {
 			console.log('Latitude is not defined')
@@ -32,6 +44,7 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 	}
 	const isGiftLongValid = (long) => {
 		if (long && long !== '' ) {
+			longitude = parseFloat(longitude);
 			return parseFloat(long);
 		} else {
 			console.log('Longitude is not defined')
@@ -50,7 +63,8 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 	const isGiftPriorityValid = (prior) => {
 		if (prior && prior !== '' ) {
 			if (typeof prior === 'string') {
-				if (priority_allowed.includes(prior[0])){
+				priority = parseInt(priority[0]);
+				if (priority_allowed.includes(priority)) {
 					return true;
 				}
 			} else {
@@ -62,13 +76,18 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 		}
 	}
 	const isGiftStatusValid = (stat) => {
-		if (stat && stat !== '' ) {
+		if (!stat || stat === '' ) {
+			status = 'unchecked';
+			return true;
+		} else {
 			if (typeof stat === 'string') {
 				if (status_allowed.includes(stat)){
-					return true;
-				}else{
+					return true
+				} else {
 					return false;
 				}
+			} else {
+				return false;
 			}
 		}
 	}
@@ -84,7 +103,7 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 								if (isGiftStatusValid(status)) {
 								 	return true;
 								} else {
-									res.status(403).json({message: `The priority must be: 'checked', 'unchecked'`});
+									res.status(403).json({message: `The status must be: 'checked', 'unchecked'`});
 								}
 							} else{
 								res.status(403).json({message: `The priority must be a number between 1 - 5`});
@@ -120,14 +139,6 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 	}
 
 	const setBoard = (board) => {
-		console.log('** ---------------------------------------------------- **')
-		console.log('GIF NAME', giftName)
-		console.log('GIF PIC', giftPic)
-		console.log('GIFT URL', giftUrl)
-		console.log('LATITUDE', latitude)
-		console.log('LONGITUDE', longitude)
-		console.log('BOARD', board)
-		console.log('** ---------------------------------------------------- **')
 		const newGift = new Gift({
 			giftName,
 			giftPic,
@@ -138,6 +149,7 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 			},
 			description,
 			priority,
+			status,
 			board
 		});
 
@@ -157,18 +169,9 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 		return newBoard;
 	}
 
-	if (isGiftValid(giftName, giftPic, giftUrl, latitude, longitude, description, priority, status)) {
-		// Formatted some valid params before saving
-		if (req.file && req.file.secure_url) {
-			giftPic = req.file.secure_url;
-		} else {
-			giftPic = image_default;
-		}
-		latitude = parseFloat(latitude);
-		longitude = parseFloat(longitude);
-
-		priority = parseInt(priority[0]);
-
+	const giftParams = [giftName, giftPic, giftUrl, latitude, longitude, description, priority, status];
+	
+	if (isGiftValid(...giftParams)) {
 		if (isBoardValid(boardSelected)) {
 			boardSelected = JSON.parse(boardSelected);
 			// It is one of the user's boards
