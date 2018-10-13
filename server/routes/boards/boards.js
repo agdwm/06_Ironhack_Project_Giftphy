@@ -83,6 +83,20 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 
 
 	const createBoard = (group) => {
+		Board.find({owner})
+			.then(boards => {
+				if (boards && boards.length !== 0) {
+					boardFound = boards.find((thisBoard) => {
+						return thisBoard.boardName == boardName;
+					})
+				}
+			})
+			.catch(e => next(e));
+		
+		if (boardFound) {
+			res.status(403).json({message: 'You already have a board with this name'});
+		}
+
 		const newBoard = new Board({
 			boardName,
 			owner,
@@ -130,13 +144,14 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	
 					Group.find({owner})
 						.then(groups => {
+							let groupFound;
 							if (groups && groups.length !== 0) {
-								newGroup = groups.find((thisGroup) => {
+								groupFound = groups.find((thisGroup) => {
 									return thisGroup.groupName == newGroup.groupName;
 								})
 							}
 	
-							if (newGroup) {
+							if (groupFound) {
 								res.status(403).json({message: 'You already have a group with this name'});
 							} else {
 								newGroup.save()

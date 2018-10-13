@@ -206,13 +206,14 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 				Board.find({owner:user})
 					.then(boards => {
 						//Does the user have a board with the same name?
+						let boardFound;
 						if (boards && boards.length !== 0) {
-							newBoard = boards.find((thisBoard) => {
+							boardFound = boards.find((thisBoard) => {
 								return thisBoard.boardName == newBoard.boardName;
 							})
 						}
 
-						if (newBoard) {
+						if (boardFound) {
 							res.status(403).json({message: 'You already have a board with this name'});
 						} else {
 							newBoard.save()
