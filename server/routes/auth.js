@@ -24,7 +24,7 @@ const login = (req, user) => {
 router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 	
 	let {username,password, email} = req.body;
-	const email_pattern = new RegExp("/^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i");
+	const email_pattern = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
 	// Check for non empty user or password
 	if (!username || !password || !email) {
@@ -75,7 +75,7 @@ router.post('/login', ensureLoggedOut(), (req, res, next) => {
 
 		// Return user and logged in
 		login(req, theUser)
-			.then(user => res.status(200).json({user:req.user, message: 'User logged'}))
+			.then(user => res.status(201).json({user:req.user, message: 'User logged'}))
 			.catch(e => next(e));
 	})(req, res, next);
 });
