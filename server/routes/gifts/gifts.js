@@ -7,7 +7,7 @@ const Board = require('../../models/Board');
 
 // (C)RUD -> Create a NEW Gift
 router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, next) => {
-	let user = req.user;
+	const owner = req.user;
 	let boardSelected = req.body.board;
 	let board = null;
 	let newGift = null;
@@ -142,7 +142,7 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 	const createNewBoard = (boardSelected) => {
 		const newBoard = new Board({ 
 			boardName: boardSelected.boardName,
-			owner: user,
+			owner,
 			privacy: boardSelected.privacy
 			//group
 		});
@@ -150,6 +150,7 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 	}
 
 	const createGift = (board) => {
+
 		const newGift = new Gift({
 			giftName,
 			giftPic,
@@ -183,7 +184,7 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 			// It is one of the user's boards
 			if (boardSelected._id) {
 				// Check just in case
-				Board.find({owner:user})
+				Board.find({owner})
 					.then(boards => {
 						if (boards && boards.length !== 0) {
 							board = boards.find((thisBoard) => {
@@ -192,6 +193,19 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 						}
 						
 						if (board) {
+							//FILTER BOARD BY ID!!
+							Gift.find({board:board._id}, {giftName: 1, _id:0})
+								.then(thisGifts => {
+									nameFound = thisGifts.find((thisGift) => {
+										return thisGift.giftName == giftName;
+									})
+
+									if (nameFound) {
+										res.status(403).json({message: 'There is already a gift with the same name on this board'});
+									}
+								})
+								.catch(e => next(e));
+
 							newGift = createGift(board);
 							saveGift(newGift);
 						} else {
@@ -203,7 +217,7 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 				// It is a new board
 				const newBoard = createNewBoard(boardSelected);
 				
-				Board.find({owner:user})
+				Board.find({owner})
 					.then(boards => {
 						//Does the user have a board with the same name?
 						let boardFound;
