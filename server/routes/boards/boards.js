@@ -11,8 +11,8 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	let group = null;
 	const { boardName } = req.body;
 	let { privacy } = req.body;
+	const name_limitChar = 50;
 	const priv_allowed = ['public', 'restricted', 'private'];
-	
 
 	const isOwnerValid = (bOwner) => {
 		if (bOwner && Object.prototype.toString.call(bOwner) === '[object Object]') {
@@ -23,7 +23,16 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	}
 
 	const isBoardNameValid = (bName) => {
-		return bName && bName !== '';
+		if (bName && bName !== '') {
+			bName = bName.trim().replace(/[ ]{2,}/gi,' ');
+			if (bName.split('').length <= name_limitChar) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
 	}
 
 	const isPrivacyValid = (bPriv) => {
@@ -52,7 +61,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 					res.status(403).json({message: `The privacy must be: 'public', 'private' or 'restricted'`});
 				}
 			} else {
-				res.status(403).json({message: 'The board name is required'});
+				res.status(403).json({message: `The board name is required (max ${name_limitChar} characters)`});
 			}
 		} else {
 			res.status(403).json({message: 'You must be logged in to create a new board'});
@@ -69,6 +78,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 			return true;
 		} else {
 			console.log('There is not a group selected');
+			return true;
 		}
 	}
 
@@ -80,7 +90,6 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		})
 		return newGroup;
 	}
-
 
 	const createBoard = (group) => {
 		Board.find({owner})

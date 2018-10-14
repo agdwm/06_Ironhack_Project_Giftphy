@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema   = mongoose.Schema;
 
 const boardSchema = new Schema({
-	boardName: { type: String, required: true, index: true, trim: true },
+	boardName: { type: String, required: true, index: true, lowercase: true, trim: true, maxlength: 50 },
 	owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
  	group: { type: Schema.Types.ObjectId, ref: 'Group' },
 	privacy: { 
