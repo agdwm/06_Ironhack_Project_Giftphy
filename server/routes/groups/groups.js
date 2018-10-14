@@ -86,68 +86,90 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		}
 	}
 
+	const createNewGroup = (finalUsers) => {
+		const newGroup = new Group({
+			groupName,
+			owner,
+			users: finalUsers
+		})
+		return newGroup;
+	}
+
+	const saveGroup = (group) => {
+		newGroup.save()
+		  	.then((group) => {
+		 		res.status(200).json({group})
+		  	})
+		  	.catch(e => next(e));
+	}
+
 	const groupParams = [owner, groupName, usersSelected];
 
 	if (isGroupValid(...groupParams)) {
 		usersSelected = JSON.parse(usersSelected);
-		//recorremos los usuarios seleccionados y comprobamos si el id de cada uno de ellos
-		//corresponde a alguno de los ids de todos los usuarios que posee el owner en todos sus grupos.
-		
+	
 		Group.find({owner}).populate('users', {username:1, email:1})
 			.then((groups) => {
 				let totalUsers = [];
-				let totalUsersId = [];
 				let finalUsers = [];
 
 				// total of users of this owner
-				for (let i = 0; i < groups.length; i++) {
-					let group = groups[i];
-					if (group.users.length > 0) {
-						for (let j = 0; j < group.users.length; j++ ) {
-							totalUsers.push(group.users[j]);
-						}
-					}
-				}
-
-				if (totalUsers.length > 0) {
-					totalUsersId = totalUsers.map((user) => {
-						user = user.toObject();
-						if (Object.prototype.hasOwnProperty.call(user, '_id')){
-							return (user._id.toString());
-						} else {
-							console.log('This user of the owner does not have an _id')
-						}
-					});
-					
-					for (let i = 0; i < usersSelected.length; i++) {
-						if (usersSelected[i].hasOwnProperty('_id')) {
-							if (totalUsersId.includes(usersSelected[i]._id)) {
-								finalUsers.push(usersSelected[i]);
-							} else {
-								res.status(403).json({message: `The selected user '${userSelected.username}' is not valid`});
+				if (groups && groups.length > 0) {
+					let group;
+					for (let i = 0; i < groups.length; i++) {
+						group = groups[i];
+						if (group.users.length > 0) {
+							for (let j = 0; j < group.users.length; j++ ) {
+								totalUsers.push(group.users[j]);
 							}
-						} else {
-							console.log("IT IS A NEW USER BECAUSE IT DOES NOT 'ID'");
 						}
 					}
-					console.log('finalUsers', finalUsers);
+	
+					if (totalUsers.length > 0) {
+						let totalUsersId = totalUsers.map((user) => {
+							user = user.toObject();
+							if (Object.prototype.hasOwnProperty.call(user, '_id')) {
+								return (user._id.toString());
+							} else {
+								console.log('This user of the owner does not have an _id')
+							}
+						});
+						
+						for (let i = 0; i < usersSelected.length; i++) {
+							if (usersSelected[i].hasOwnProperty('_id')) {
+								if (totalUsersId.includes(usersSelected[i]._id)) {
+									finalUsers.push(usersSelected[i]);
+								} else {
+									res.status(403).json({message: `The selected user '${userSelected.username}' is not valid`});
+								}
+							} else {
+								console.log("IT IS A NEW USER BECAUSE IT DOES NOT 'ID'");
+								// Send an email
+							}
+						}
+					}
+
+					// CHEQUEAR que el usuario no tenga ya un grupo con este nombre
+					console.log(groups);
+					let groupNameFound = groups.find((thisGroup) => {
+						return thisGroup.groupName == groupName;
+					})
+
+					
+					if (groupNameFound) {
+						res.status(403).json({message: `You already have a group with the name '${groupName}'`});
+					} else {
+						newGroup = createNewGroup(finalUsers);
+						saveGroup(newGroup);
+					}
+
+				} else {
+					console.log('This user has no group yet');
+					newGroup = createNewGroup(finalUsers);
+					saveGroup(newGroup);
 				}
 			})
 			.catch(e => next(e));
-
-			
-
-		//  const newGroup = new Group({ 
-		//  	groupName,
-		//  	owner,
-		// 	users:usersSelected
-		//  });
-
-		//  newGroup.save()
-		//  	.then((group) => {
-		//  		res.status(200).json({group})
-		//  	})
-		//  	.catch(e => next(e));
 	}
 
 });

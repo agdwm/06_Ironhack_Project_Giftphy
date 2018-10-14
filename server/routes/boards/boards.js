@@ -161,7 +161,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 							}
 	
 							if (groupFound) {
-								res.status(403).json({message: 'You already have a group with this name'});
+								res.status(403).json({message: `You already have a group with this ${newGroup.groupName}`});
 							} else {
 								newGroup.save()
 									.then((newGroup) => {
