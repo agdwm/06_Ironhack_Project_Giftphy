@@ -126,7 +126,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	const boardParams = [owner, boardName, privacy]
 
 	if (isBoardValid(...boardParams)) {
-		// RESTRICTED => To a Group
+		// 'RESTRICTED' => To a Group
 		if (privacy === 'restricted') {
 			if (isGroupValid(groupSelected)) {
 				groupSelected = JSON.parse(groupSelected);

@@ -8,7 +8,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	//name, owner, (users)??
 	const {groupName} = req.body;
 	let usersSelected = req.body.users;
-	console.log('GROUPNAME', groupName)
+	// [{"username":"luis", "email":"lugonperez@gmail.com"},{"username":"sara", "email":"sara@gmail.com"}]
 	let owner = req.user;
 	const name_limitChar = 50;
 
@@ -35,30 +35,12 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 
 	const areUsersValid = (gUsers) => {
 		if (gUsers && gUsers !== '') {
-			console.log(gUsers)
 			try {
 				JSON.parse(gUsers)
 			} catch(err) {
 				res.status(403).json({message: 'Group must be an Array of objects'}) 
 			}
 			return true
-
-			// console.log('USER', Object.prototype.toString.call(gUsers));
-			// if (Object.prototype.toString.call(gUsers) === '[object Array]') {
-			// 	invalidUser = users.find((gUser) => {
-			// 		console.log('USER', Object.prototype.toString.call(gUser));
-			// 		return Object.prototype.toString.call(gUser) != '[object Object]';
-			// 	})
-
-			// 	if (invalidUser) {
-			// 		console.log('There are some users with an incorrect type');
-			// 		return false;
-			// 	}else {
-			// 		return true;
-			// 	}
-			// } else {
-			// 	return false;
-			// }
 		} else {
 			console.log('There are not users selected');
 			return true;
@@ -67,9 +49,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 
 	const isEachUserValid = (usersParsed) => {
 		if (Object.prototype.toString.call(usersParsed) === '[object Array]') {
-			console.log('YUJU ARRAY');
 			invalidUser = usersParsed.find((gUser) => {
-				console.log('USER', Object.prototype.toString.call(gUser));
 				return Object.prototype.toString.call(gUser) != '[object Object]';
 			})
 		
@@ -93,7 +73,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 					if (isEachUserValid(usersSelected)) {
 						return true;
 					} else {
-						res.status(403).json({message: 'The is any user with a invalid type'});
+						res.status(403).json({message: 'There is any user with a invalid type'});
 					}
 				} else {
 					res.status(403).json({message: 'The users do not have a valid type'});
@@ -109,18 +89,68 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	const groupParams = [owner, groupName, usersSelected];
 
 	if (isGroupValid(...groupParams)) {
+		usersSelected = JSON.parse(usersSelected);
+		//recorremos los usuarios seleccionados y comprobamos si el id de cada uno de ellos
+		//corresponde a alguno de los ids de todos los usuarios que posee el owner en todos sus grupos.
+		
+		Group.find({owner}).populate('users', {username:1, email:1})
+			.then((groups) => {
 
+				let totalUsers = [];
+				let totalUsersId = [];
+				// total of users of this owner
+				for (let i = 0; i < groups.length; i++) {
+					let group = groups[i];
+					if (group.users.length > 0) {
+						for (let j = 0; j < group.users.length; j++ ) {
+							totalUsers.push(group.users[j]);
+						}
+					}
+				}
+
+				if (totalUsers.length > 0) {
+					totalUsersId = totalUsers.map((user) => {
+						user = user.toObject();
+						if (Object.prototype.hasOwnProperty.call(user, '_id')){
+							return (user._id.toString());
+						} else {
+							console.log('This user of the owner does not have an _id')
+						}
+						
+					});
+				}
+				
+				let finalUsers = usersSelected.map((userSelected) => {
+					if (userSelected.hasOwnProperty('_id')){
+						if (totalUsersId.includes(userSelected._id)) {
+							return userSelected;
+						} else {
+							res.status(403).json({message: `The selected user '${userSelected.username}' is not valid`});
+						}
+					} else {
+						//IT IS A NEW USER BECAUSE IT DOES NOT 'ID'
+					}
+				})
+
+				console.log(finalUsers);
+			})
+			.catch(e => next(e));
+
+			
+
+		//  const newGroup = new Group({ 
+		//  	groupName,
+		//  	owner,
+		// 	users:usersSelected
+		//  });
+
+		//  newGroup.save()
+		//  	.then((group) => {
+		//  		res.status(200).json({group})
+		//  	})
+		//  	.catch(e => next(e));
 	}
-	// const newGroup = new Group({ 
-	// 	groupName,
-	// 	owner
-	// });
 
-	// newGroup.save()
-	// 	.then((group) => {
-	// 		res.status(200).json({group})
-	// 	})
-	// 	.catch(e => next(e));
 });
 
 //C(R)UD -> Retrieve ALL Groups of an User
