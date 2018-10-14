@@ -95,9 +95,10 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		
 		Group.find({owner}).populate('users', {username:1, email:1})
 			.then((groups) => {
-
 				let totalUsers = [];
 				let totalUsersId = [];
+				let finalUsers = [];
+
 				// total of users of this owner
 				for (let i = 0; i < groups.length; i++) {
 					let group = groups[i];
@@ -116,23 +117,21 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 						} else {
 							console.log('This user of the owner does not have an _id')
 						}
-						
 					});
-				}
-				
-				let finalUsers = usersSelected.map((userSelected) => {
-					if (userSelected.hasOwnProperty('_id')){
-						if (totalUsersId.includes(userSelected._id)) {
-							return userSelected;
+					
+					for (let i = 0; i < usersSelected.length; i++) {
+						if (usersSelected[i].hasOwnProperty('_id')) {
+							if (totalUsersId.includes(usersSelected[i]._id)) {
+								finalUsers.push(usersSelected[i]);
+							} else {
+								res.status(403).json({message: `The selected user '${userSelected.username}' is not valid`});
+							}
 						} else {
-							res.status(403).json({message: `The selected user '${userSelected.username}' is not valid`});
+							console.log("IT IS A NEW USER BECAUSE IT DOES NOT 'ID'");
 						}
-					} else {
-						//IT IS A NEW USER BECAUSE IT DOES NOT 'ID'
 					}
-				})
-
-				console.log(finalUsers);
+					console.log('finalUsers', finalUsers);
+				}
 			})
 			.catch(e => next(e));
 
