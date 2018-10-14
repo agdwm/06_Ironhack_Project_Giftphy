@@ -18,11 +18,24 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 	const image_default = 'images/default-gift-500.png';
 	//ALLOWED VALUES
 	const desc_limitWords = 400;
+	const name_limitChar = 50;
 	const priority_allowed = [1, 2, 3, 4, 5];
 	const status_allowed = ['checked', 'unchecked'];
 	
 	// GIFTS VALIDATIONS
-	const isGiftNameValid = (gName) => { return gName && gName !== '';}
+	const isGiftNameValid = (gName) => { 
+		if (gName && gName !== '') {
+			gName = gName.trim().replace(/[ ]{2,}/gi,' ');
+			if (gName.split(/\s+/).length <= name_limitWords) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	}
+
 	const isGiftPicValid = (gPic) => { 
 		if (gPic && gPic !== '') {
 			if (req.file && req.file.secure_url) {
@@ -34,7 +47,9 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 			return true;
 		}
 	}
+
 	const isGiftUrlValid = (gUrl) => { return url_pattern.test(gUrl); }
+	
 	const isGiftLatValid = (lat) => {
 		if (lat && lat !== '') {
 			latitude = parseFloat(latitude);
@@ -52,13 +67,15 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 		}
 	}
 	const isGiftDescValid = (desc) => {
-		if (desc && desc !== '') {
-			const totalWords = desc.split(/\s+\b/).length;
-			if (totalWords >= desc_limitWords) {
-				return false;
-			} else {
+		if (gName && gName !== '') {
+			gName = gName.trim().replace(/[ ]{2,}/gi,' ');
+			if (gName.split('').length <= name_limitChar) {
 				return true;
+			} else {
+				return false;
 			}
+		} else {
+			return false;
 		}
 	}
 	const isGiftPriorityValid = (prior) => {
@@ -122,7 +139,7 @@ router.post('/new', ensureLoggedIn(), uploadCloud.single('giftPic'), (req, res, 
 				res.status(403).json({message: 'The gift image must have a valid type'});
 			}
 		} else {
-			res.status(403).json({message: 'Gift name is required'});
+			res.status(403).json({message: `The gift name is required (max ${name_limitChar} characters)`});
 		}
 	}
 

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema   = mongoose.Schema;
 
 const giftSchema = new Schema({
-	giftName: { type: String, required: true, index: true, trim: true },
+	giftName: { type: String, required: true, index: true, lowercase: true, trim: true, maxlength: 50  },
 	giftPic: { type: String, default: 'images/default-gift-500.png' },
 	giftUrl: String,
 	location: { 
