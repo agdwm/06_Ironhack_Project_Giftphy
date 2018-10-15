@@ -28,7 +28,7 @@ router.get('/:id', ensureLoggedIn(), (req, res) => {
 })
 
 // EDIT
-router.patch('/edit/', ensureLoggedIn(), uploadCloud.single('profilePic'), (req, res, next) => {
+router.patch('/edit', ensureLoggedIn(), uploadCloud.single('profilePic'), (req, res, next) => {
 	const id = req.user._id;
 	const {username} = req.body;
 	let {specialDates} = req.body;
