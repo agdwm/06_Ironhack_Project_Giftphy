@@ -46,23 +46,35 @@
 					display: block;
 					margin: 13px 0;
 				}
+
 				.confirm-links a.link {
+					font-size: 14px;
+					text-decoration: none;
 					color: #38C9DB;
-					padding-left: 5px;
-					padding-right: 5px;
+					padding: 5px;
+					margin: 5px;
+					border: 2px solid #38C9DB;
+					display: inline-block;
 				}
-				.link:not(:last-child):after {
-					content: '|';
-					
+				.confirm-links a.link:hover {
+					color: #24afc2;
+					border: 2px solid #24afc2;
 				}
+				
 				.subtitle {
 					font-weight:normal;
 				}
 				.message {
 					font-weight:normal;
 				}
+				.message em {
+					font-style: italic;
+				}
 				.username {
 					text-transform: capitalize;
+				}
+				.group-name {
+					text-decoration: underline;
 				}
 			</style>
 			<!--[if !mso]><!-->
@@ -196,8 +208,8 @@
 														<td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
 															<div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;line-height:1;text-align:center;color:#555;">
 																<h2 class="greeting">Hi <span class="username">{{user.username}}</span>!!</h2>
-																<h3 class="subtitle"><strong class="username">{{owner.username}}</strong> has invited you to join the group <em>'{{groupName}}'</em></h3>
-																<h4 class="message">Please, click to 'Accept' or 'Reject' to accept or reject this invitation</h4>
+																<h3 class="subtitle"><strong class="username">{{owner.username}}</strong> has invited you to join the group: <span class="group-name">'{{groupName}}'</span></h3>
+																<h4 class="message">Please, click to <em>'Accept'</em> or <em>'Reject'</em> to accept or reject this invitation</h4>
 																<div class="confirm-links">
 																	<span><a class="link" href="http://localhost:3000/groups/confirm/{{confirmationCode}}?status=accepted">Accept</a></span>
 																	<span><a class="link"  href="http://localhost:3000/groups/confirm/{{confirmationCode}}?status=rejected">Reject</a></span>

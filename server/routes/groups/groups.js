@@ -106,11 +106,16 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	}
 
 	const createNewGroup = (finalUsers) => {
+		
 		newGroup = new Group({
 			groupName,
-			owner,
-			users: finalUsers
+			owner
 		})
+
+		if (finalUsers) {
+			newGroup.users = finalUsers
+		}
+
 		return newGroup;
 	}
 
@@ -221,7 +226,8 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 					if (groupNameFound) {
 						res.status(403).json({message: `You already have a group with the name '${groupName}'`});
 					} else {
-						newGroup = createNewGroup(finalUsers); //??
+						//newGroup = createNewGroup(finalUsers); //??
+						newGroup = createNewGroup(null);
 						saveGroup(newGroup);
 					}
 
@@ -246,11 +252,10 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 							newRequest = new Request({
 								owner,
 								guest,
-								group: newGroup, //??
+								group: newGroup,
 								status: 'pending',
 								confirmationCode
 							});
-
 
 							newRequest.save()
 								.then(request => {
@@ -260,7 +265,6 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 									return sendMail(guest.email, subject, html)
 								})
 								.then(() => {
-								
 									//res.status(403).json({message: `Email sent`});
 								})
 								.catch(e => next(e));
@@ -281,11 +285,28 @@ router.get('/confirm/:confirmCode', (req, res, next) => {
 	let confirmationCode = req.params.confirmCode;
 	let status = req.query.status;
 
-	Request.findOneAndUpdate({confirmationCode}, {status}, {new:true})
-		.then((request) => {
-			res.status(200).json({request}); //??
-		})
-		.catch(e => next(e));
+	if (status === 'accepted') {
+		Request.findOneAndUpdate({confirmationCode}, {status}, {new:true}).populate('guest').populate('group')
+			.then((request) => {
+				User.findById(request.guest._id)
+					.then((guestAccepted) => {
+						Group.findByIdAndUpdate(request.group._id, {users: guestAccepted}, {new:true})
+							.then((group) => {
+								console.log(`${guestAccepted.username} added to the group ${group.groupName}`);
+								//eliminar la request una vez hemos añadido el usuario al grupo
+								//Request.findByIdAndDelete(request._id);
+							})
+							.catch(e => next(e));
+					})
+					.catch(e => next(e));
+			})
+			.catch(e => next(e));
+			
+		
+	} else if(status === 'rejected') {
+		//eliminamos la request ya que el usuario la ha rechazado
+		//
+	}
 
 })
 
