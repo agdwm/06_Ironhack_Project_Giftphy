@@ -5,7 +5,8 @@ const requestSchema = new Schema({
 	owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
 	guest: { type: Schema.Types.ObjectId, ref: 'User', required: true },
 	group: { type: Schema.Types.ObjectId, ref: 'Group', required: true },
-	status: { type: String, enum: ['pending', 'accepted', 'rejected'], required: true }
+	status: { type: String, enum: ['pending', 'accepted', 'rejected'], required: true, default:'pending' },
+	confirmationCode: { type: String, unique: true },
 }, {
 	timestamps: {
 		createdAt: 'created_at',
@@ -14,4 +15,4 @@ const requestSchema = new Schema({
 });
 
 const Request = mongoose.model('Request', requestSchema);
-module.exports = User;
+module.exports = Request;

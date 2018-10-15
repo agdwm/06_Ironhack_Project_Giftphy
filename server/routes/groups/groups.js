@@ -1,15 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const { ensureLoggedIn} = require('connect-ensure-login');
-//const template = require('../../templates/template');
 const _ = require('lodash');
-const sendMail = require('../../mail/sendMail');
+
 const Group = require('../../models/Group');
 const User = require('../../models/User');
+const Request = require('../../models/Request');
 
 // Bcrypt to encrypt the confirmationCode
 const bcrypt = require('bcrypt');
 const bcryptSalt = 10;
+
+// Email
+//const template = require('../../templates/template');
+const sendMail = require('../../mail/sendMail');
+const fs = require('fs');
+const hbs = require('hbs');
+const emailTemplate = './views/email/email.hbs';
+
+let newGroup;
 
 // (C)RUD -> Create a NEW Group
 router.post('/new', ensureLoggedIn(), (req, res, next) => {
@@ -97,7 +106,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	}
 
 	const createNewGroup = (finalUsers) => {
-		const newGroup = new Group({
+		newGroup = new Group({
 			groupName,
 			owner,
 			users: finalUsers
@@ -147,53 +156,60 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 						});
 						
 						for (let i = 0; i < usersSelected.length; i++) {
+							console.log("It is a user FROM THE LIST because it has 'ID'");
+							
 							if (usersSelected[i].hasOwnProperty('_id')) {
 								if (totalUsersId.includes(usersSelected[i]._id)) {
+									//FINALUSERS = FinalsUser to send an email
 									finalUsers.push(usersSelected[i]);
 								} else {
-									res.status(403).json({message: `The selected user '${userSelected.username}' is not valid`});
+									res.status(403).json({message: `The selected user '${userSelected.username}' has not valid 'id'`});
 								}
+
+
 							} else {
-								console.log("IT IS A NEW USER BECAUSE IT DOES NOT 'ID'");
+								console.log("It is a NEW USER because it doesn't have 'ID'");
 
-								if (!process.env.GMAIL_USER || ! process.env.GMAIL_PASSW ) {
-									throw new Error("You have to configure mail credentials in .private.env file.");
-								}
-								const salt = bcrypt.genSaltSync(bcryptSalt);
-								const hashUsername = encodeURI(bcrypt.hashSync(username1, salt)).replace("/", "");
-								const temporaryPassw = Math.random().toString(36).slice(-8);
+								// if (!process.env.GMAIL_USER || ! process.env.GMAIL_PASSW ) {
+								// 	throw new Error("You have to configure mail credentials in .private.env file.");
+								// }
+								// const salt = bcrypt.genSaltSync(bcryptSalt);
+								// const hashUsername = encodeURI(bcrypt.hashSync(username1, salt)).replace("/", "");
+								// //const temporaryPassw = Math.random().toString(36).slice(-8);
 
-								const {username1, email1, message1} = req.body;
+								// const {username1, email1, message1} = req.body;
 								
-								const newUser = new User({
-									username: username1,
-									confirmationCode: hashUsername,
-									email: email1,
-									password: temporaryPassw
-								})
+								// // const newUser = new User({
+								// // 	username: username1,
+								// // 	confirmationCode: hashUsername,
+								// // 	email: email1,
+								// // 	password: temporaryPassw
+								// // })
 
 
-								let foundEmail = totalUsers.find((thisUser) => {
-									return thisUser.email == newUser.email;
-								})
+								// let foundEmail = totalUsers.find((thisUser) => {
+								// 	return thisUser.email == newUser.email;
+								// })
 
-								if (foundEmail) {
-									res.status(403).json({message: `You already have a user with the email '${newUser.email}'`});
-								}
+								// // The user is in the list. Select it from 
+								// if (foundEmail) {
+								// 	res.status(403).json({message: `You already have a user with the email '${newUser.email}' in the list`});
+								// }
 
-								newUser.save()
-									.then(user => {
-										let subject = `Hi! ${newUser.username} ${owner.username} has invited you to join the group '${groupName}' `;
-										//let template = hbs.compile(fs.readFileSync('./views/auth/email.hbs').toString());
-										//let html = template({user:user});
-										return sendMail(user.email, subject, html);
-									})
-									.then(() => {
-										res.redirect("/");
-									})
-									.catch(err => {
-										res.render("auth/signup", console.log(err));
-									})
+								// newUser.save()
+								// 	.then(user => {
+								// 		let subject = `Hi! ${newUser.username} ${owner.username} has invited you to join the group '${groupName}' `;
+								// 		let template = hbs.compile(fs.readFileSync('./views/email/email.hbs').toString());
+								// 		let html = template({user:user});
+								// 		return sendMail(email1, subject, html);
+								// 	})
+								// 	.then(() => {
+								// 		//res.redirect("/");
+								// 		res.status(201).json(newUser)
+								// 	})
+								// 	.catch(err => {
+								// 		//res.render("auth/signup", console.log(err));
+								// 	})
 							}
 						}
 					}
@@ -205,10 +221,51 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 					if (groupNameFound) {
 						res.status(403).json({message: `You already have a group with the name '${groupName}'`});
 					} else {
-						newGroup = createNewGroup(finalUsers);
+						newGroup = createNewGroup(finalUsers); //??
 						saveGroup(newGroup);
 					}
 
+					//usuarios a agregar al grupo y a los que tenemos que enviarles un email
+					if (finalUsers && finalUsers.length > 0) {
+
+						if (!process.env.GMAIL_USER || ! process.env.GMAIL_PASSW ) {
+						 	throw new Error("You have to configure mail credentials in .private.env file.");
+						}
+
+						const salt = bcrypt.genSaltSync(bcryptSalt);
+						let newRequest; 
+
+						for (var i = 0; i < finalUsers.length; i++) {
+							console.log('FINAL_USER---------', finalUsers[i]);
+							let guest = finalUsers[i];
+							let confirmationCode = encodeURI(bcrypt.hashSync(guest.username, salt)).replace("/", "");
+							let subject = `Hi! ${guest.username}, '${owner.username}' has invited you to join the group '${groupName}' `;
+							let template = hbs.compile(fs.readFileSync(emailTemplate).toString());
+							let html = template({owner, user:guest, groupName, confirmationCode});
+
+							newRequest = new Request({
+								owner,
+								guest,
+								group: newGroup, //??
+								status: 'pending',
+								confirmationCode
+							});
+
+
+							newRequest.save()
+								.then(request => {
+									subject;
+									template;
+									html;
+									return sendMail(guest.email, subject, html)
+								})
+								.then(() => {
+								
+									//res.status(403).json({message: `Email sent`});
+								})
+								.catch(e => next(e));
+						}
+					}
 				} else {
 					console.log('This user has no group yet');
 					newGroup = createNewGroup(finalUsers);
@@ -219,6 +276,18 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	}
 
 });
+
+router.get('/confirm/:confirmCode', (req, res, next) => {
+	let confirmationCode = req.params.confirmCode;
+	let status = req.query.status;
+
+	Request.findOneAndUpdate({confirmationCode}, {status}, {new:true})
+		.then((request) => {
+			res.status(200).json({request}); //??
+		})
+		.catch(e => next(e));
+
+})
 
 //C(R)UD -> Retrieve ALL Groups of an User
 router.get('/groups', (req, res, next) => {
