@@ -197,33 +197,34 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 						}
 
 						checkEmails
-							.then(()=>{
+							.then(() => {
 								registeredUsers = usersFromList.concat(registeredUsers);
 								console.log(colors.magenta('UNREGISTEREDUSERS ====>', unRegisteredUsers));
+
+								if (unRegisteredUsers && unRegisteredUsers.length > 0) {
+							
+									let newUser;
+									let promises = unRegisteredUsers.map((user) => {
+										
+										newUser = new User({
+											username: user.username,
+											password: user.username,
+											email: user.email
+										});
+		
+										return newUser.save()
+											.then(newUser => { return newUser })
+											.catch(e => next(e));
+									})
+
+									Promise.all(promises).then((unRegisteredUsersWithId) => {
+										console.log(colors.yellow('unRegisteredUsersWithId', unRegisteredUsersWithId))
+									})
+
+								}
+								// usersFromForm.push(newUser);
 							})
 							.catch(e => next(e))
-
-						
-
-						if (unRegisteredUsers && unRegisteredUsers.length > 0) {
-							let newUser;
-							let unRegisteredUsersWithId = unRegisteredUsers.map((user) => {
-								
-								newUser = new User({
-									username: user.username,
-									password: user.username,
-									email: user.email
-								});
-
-								return newUser.save()
-									.then(newUser => {
-										return newUser;
-									})
-									.catch(e => next(e));
-							})
-							console.log('unRegisteredUsersWithId =========================>', unRegisteredUsersWithId);
-						}
-						// usersFromForm.push(newUser);
 					}
 
 					debugger;
