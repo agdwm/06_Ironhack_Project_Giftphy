@@ -135,7 +135,8 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	}
 
 	const sendInvitations = (finalUsers, temporary) => {
-				
+		
+		console.log(colors.gray('TEMPORARY', temporary));
 		const url = `${process.env.PUBLIC_URL}:${process.env.PORT}`;
 		const emailTemplate = './views/email/email.hbs';
 		const template = hbs.compile(fs.readFileSync(emailTemplate).toString());
@@ -146,6 +147,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		
 		
 		for (var i = 0; i < finalUsers.length; i++) {
+			console.log(colors.blue(finalUsers[i]));
 			let guest = finalUsers[i];
 			let confirmationCode = encodeURI(bcrypt.hashSync(guest.username, salt)).replace("/", "");
 			let subject = `Hi! ${guest.username}, '${owner.username}' has invited you to join the group '${groupName}' `;
@@ -167,6 +169,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 					return sendMail(guest.email, subject, html)
 				})
 				.then(() => {
+					console.log(`message: Email sent to ${guest.email}`)
 					//res.status(403).json({message: `Email sent`});
 				})
 				.catch(e => next(e));
@@ -227,7 +230,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 								if (totalGroupsUsersId.includes(usersToInvite[i]._id)) {
 									usersFromList.push(usersToInvite[i]);
 								} else {
-									res.status(403).json({message: `The selected user '${userSelected.username}' has not valid 'id'`});
+									res.status(403).json({message: `The selected user '${usersToInvite[i].username}' has not valid 'id'`});
 								}
 							} else {
 								//It is a NEW USER FROM THE FORM because it doesn't have 'ID'
@@ -237,7 +240,6 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 										if (user) {
 											console.log(colors.green('SI esta en DDBB', user))
 											registeredUsers.push(user);
-											console.log(colors.blue('11111111111111111'))
 										} else {
 											console.log(colors.red('NO esta en DDBB', usersToInvite[i]));
 											unRegisteredUsers.push(usersToInvite[i]);
@@ -251,7 +253,6 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 						checkEmails
 							.then(() => {
 								registeredUsers = usersFromList.concat(registeredUsers);
-								console.log(colors.magenta('UNREGISTEREDUSERS ====>', unRegisteredUsers));
 
 								if (unRegisteredUsers && unRegisteredUsers.length > 0) {
 							
@@ -271,16 +272,18 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 
 									Promise.all(registerUsersTemp)
 										.then((unRegisteredUsersWithId) => {
-											console.log(colors.yellow('unRegisteredUsersWithId', unRegisteredUsersWithId))
-											console.log(colors.blue('22222222222222222222'));
-											if (unRegisteredUsersWithId && unRegisteredUsersWithId > 0) {
-												//sendInvitations(unRegisteredUsersWithId, true)
+											console.log(colors.yellow('unRegisteredUsersWithId_ 1', unRegisteredUsersWithId))
+											if (unRegisteredUsersWithId && unRegisteredUsersWithId.length > 0) {
+												console.log(colors.yellow('unRegisteredUsersWithId_ 2', unRegisteredUsersWithId))
+												sendInvitations(unRegisteredUsersWithId, true)
 											}
 										})
 										.catch(e => next(e))
 								}
-								if (registeredUsers && registeredUsers > 0){
-									//sendInvitations(registeredUsers, false)
+
+								if (registeredUsers && registeredUsers.length > 0) {
+									console.log(colors.yellow('REGISTEREDUSERS ====>', registeredUsers));
+									sendInvitations(registeredUsers, false)
 								}
 							})
 							.catch(e => next(e))
@@ -302,56 +305,28 @@ router.get('/confirm/:confirmCode', (req, res, next) => {
 	let confirmationCode = req.params.confirmCode;
 	let status = req.query.status;
 
-	if (status === 'accepted') {
+	if (status !== 'pending') {
 		Request.findOneAndUpdate({confirmationCode}, {status}, {new:true}).populate('guest').populate('group')
 			.then((request) => {
-				let user;
-				//si el usuario tiene ID
-				if (request.guest._id) {
+				if (request && status === "accepted") {
 					User.findById(request.guest._id)
-						.then((guestAccepted) => {		
-							user = guestAccepted;
+						.then((guest) => {
+							if (guest) {
+								Group.findByIdAndUpdate(request.group._id, {users: guest}, {new:true})
+									.then((group) => {
+										console.log(`${guest.username} added to the group ${group.groupName}`);
+										Request.findByIdAndDelete(request._id);
+									})
+									.catch(e => next(e));
+							}
 						})
 						.catch(e => next(e));
-				//si el usuario NO tiene ID
-				} else {
-					// let newUserAccepted = new User({
-					// 	username: request.guest.username,
-					// 	password: request.guest.username,
-					// 	email: request.guest.email
-					// });
-
-					// newUserAccepted.save()
-					// 	.then(newUserAccepted => {
-					// 		user = newUserAccepted;
-					// 	})
-					// 	.catch(e => next(e));
+				} else if (request && status === "rejected") {
+					Request.findByIdAndDelete(request._id);
 				}
-				console.log('USER------------------------>', user);
-
-				Group.findByIdAndUpdate(request.group._id, {users: user}, {new:true})
-					.then((group) => {
-						console.log(`${user.username} added to the group ${group.groupName}`);
-						//Request.findByIdAndDelete(request._id);
-					})
-					.catch(e => next(e));
 			})
 			.catch(e => next(e));
-
-	} else if(status === 'rejected') {
-		Request.findOneAndUpdate({confirmationCode}, {status}, {new:true}).populate('guest')
-			.then((request) => {
-				User.findById(request.guest._id)
-					.then((guestRejected) => {
-						console.log(`${guestRejected.username} rejected the invitation to the group`);
-						//Request.findByIdAndDelete(request._id);
-					})
-					.catch(e => next(e));
-			})
-			.catch(e => next(e));
-
 	}
-
 })
 
 //C(R)UD -> Retrieve ALL Groups of an User

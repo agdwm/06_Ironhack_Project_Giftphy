@@ -76,6 +76,14 @@
 				.group-name {
 					text-decoration: underline;
 				}
+				.temporary {
+
+					padding-top: 20px;
+					text-align: left;
+				}
+				.temporary ul {
+					padding-left: 0;
+				}
 			</style>
 			<!--[if !mso]><!-->
 			<style type="text/css">
@@ -211,17 +219,32 @@
 																<h3 class="subtitle"><strong class="username">{{owner.username}}</strong> has invited you to join the group: <span class="group-name">'{{groupName}}'</span></h3>
 																<h4 class="message">Please, click to <em>'Accept'</em> or <em>'Reject'</em> to accept or reject this invitation</h4>
 																<div class="confirm-links">
-																	<span><a class="link" href="{{publicUrl}}:{{port}}/groups/confirm/{{confirmationCode}}?status=accepted">Accept</a></span>
-																	<span><a class="link"  href="{{publicUrl}}:{{port}}/groups/confirm/{{confirmationCode}}?status=rejected">Reject</a></span>
+																	<span><a class="link" href="{{url}}/groups/confirm/{{confirmationCode}}?status=accepted">Accept</a></span>
+																	<span><a class="link"  href="{{url}}/groups/confirm/{{confirmationCode}}?status=rejected">Reject</a></span>
 																</div>
-																{{#if gest._id}}
-																	<h4>Thank you!</h4>
-																{{else}}
-																	<p>Se te ha asignado una contraseña temporal: {{temporaryPassw}}</p>
-																	<p>Recuerda modificarla cuando accedas a la plataforma.</p>
-																	<h4>Thank you!</h4>
+																{{#if temporary}}
+																	<section class="temporary">
+																		<h3 class="greeting">Wellcome to Giftphy!</h3>
+																		<ul>
+																			<li>
+																				<p>If you 'Accept', you will be able to access with this temporary credentials:</p>
+																				<p><strong>Email: </strong>{{user.email}}</p>
+																				<p><strong>Username: </strong>{{user.username}}</p>
+																				<p><strong>Password: </strong>{{user.username}}</p>
+																			</li>
+																			<li>
+																				<p>If you 'Reject', these data will be removed from our database.</p>
+																			</li>
+																		</ul>
+																		
+																		
+																		
+																		
+																		
+																		<small>Remember to update your password from your private area.</small>
+																	</section>
 																{{/if}}
-																
+																<h4>Thank you!</h4>
 															</div>
 														</td>
 													</tr>
