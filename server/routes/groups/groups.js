@@ -10,6 +10,7 @@ const Request = require('../../models/Request');
 // Bcrypt to encrypt the confirmationCode
 const bcrypt = require('bcrypt');
 const bcryptSalt = 10;
+const salt = bcrypt.genSaltSync(bcryptSalt);
 
 // Email
 //const template = require('../../templates/template');
@@ -105,17 +106,15 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		}
 	}
 
-	const createNewGroup = (finalUsers) => {
-		
+	const createNewGroup = (usersFromList) => {
 		newGroup = new Group({
 			groupName,
 			owner
 		})
 
-		if (finalUsers) {
-			newGroup.users = finalUsers
+		if (usersFromList) {
+			newGroup.users = usersFromList
 		}
-
 		return newGroup;
 	}
 
@@ -135,7 +134,8 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		Group.find({owner}).populate('users', {username:1, email:1})
 			.then((groups) => {
 				let totalUsers = [];
-				let finalUsers = [];
+				let usersFromList = []; //users with 'ID' who exist in the DDBB
+				let usersFromForm = []; //users without 'ID' who can exist or not in the DDBB;
 				let totalGroupsNames = [];
 
 				// total of users of this owner
@@ -164,59 +164,19 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 						});
 						
 						for (let i = 0; i < usersSelected.length; i++) {
-							//console.log("It is a user FROM THE LIST because it has 'ID'");
+							console.log("It is a user FROM THE LIST because it has 'ID'");
 							
 							if (usersSelected[i].hasOwnProperty('_id')) {
 								if (totalUsersId.includes(usersSelected[i]._id)) {
-									//FINALUSERS = FinalsUser to send an email
-									finalUsers.push(usersSelected[i]);
+									usersFromList.push(usersSelected[i]);
 								} else {
 									res.status(403).json({message: `The selected user '${userSelected.username}' has not valid 'id'`});
 								}
 
 							} else {
-								//console.log("It is a NEW USER because it doesn't have 'ID'");
+								console.log("It is a NEW USER FROM THE FORM because it doesn't have 'ID'");
 
-								// if (!process.env.GMAIL_USER || ! process.env.GMAIL_PASSW ) {
-								// 	throw new Error("You have to configure mail credentials in .private.env file.");
-								// }
-								// const salt = bcrypt.genSaltSync(bcryptSalt);
-								// const hashUsername = encodeURI(bcrypt.hashSync(username1, salt)).replace("/", "");
-								// //const temporaryPassw = Math.random().toString(36).slice(-8);
-
-								// const {username1, email1, message1} = req.body;
-								
-								// // const newUser = new User({
-								// // 	username: username1,
-								// // 	confirmationCode: hashUsername,
-								// // 	email: email1,
-								// // 	password: temporaryPassw
-								// // })
-
-
-								// let foundEmail = totalUsers.find((thisUser) => {
-								// 	return thisUser.email == newUser.email;
-								// })
-
-								// // The user is in the list. Select it from 
-								// if (foundEmail) {
-								// 	res.status(403).json({message: `You already have a user with the email '${newUser.email}' in the list`});
-								// }
-
-								// newUser.save()
-								// 	.then(user => {
-								// 		let subject = `Hi! ${newUser.username} ${owner.username} has invited you to join the group '${groupName}' `;
-								// 		let template = hbs.compile(fs.readFileSync('./views/email/email.hbs').toString());
-								// 		let html = template({user:user});
-								// 		return sendMail(email1, subject, html);
-								// 	})
-								// 	.then(() => {
-								// 		//res.redirect("/");
-								// 		res.status(201).json(newUser)
-								// 	})
-								// 	.catch(err => {
-								// 		//res.render("auth/signup", console.log(err));
-								// 	})
+								usersFromForm.push(usersSelected[i]);
 							}
 						}
 					}
@@ -228,28 +188,29 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 					if (groupNameFound) {
 						res.status(403).json({message: `You already have a group with the name '${groupName}'`});
 					} else {
-						//newGroup = createNewGroup(finalUsers); //??
+						//newGroup = createNewGroup(usersFromList); //??
 						newGroup = createNewGroup(null);
 						saveGroup(newGroup);
 					}
 
-					//usuarios a agregar al grupo y a los que tenemos que enviarles un email
-					if (finalUsers && finalUsers.length > 0) {
+					//SI HAY USUARIOS EN EL LISTADO //(users con ID)
+					if (usersFromList && usersFromList.length > 0) {
 
 						if (!process.env.GMAIL_USER || ! process.env.GMAIL_PASSW ) {
 						 	throw new Error("You have to configure mail credentials in .private.env file.");
 						}
 
-						const salt = bcrypt.genSaltSync(bcryptSalt);
 						let newRequest; 
 
-						for (var i = 0; i < finalUsers.length; i++) {
-							//console.log('FINAL_USER---------', finalUsers[i]);
-							let guest = finalUsers[i];
+						for (var i = 0; i < usersFromList.length; i++) {
+							const publicUrl = process.env.PUBLIC_URL;
+							const port = process.env.PORT;
+							let guest = usersFromList[i];
 							let confirmationCode = encodeURI(bcrypt.hashSync(guest.username, salt)).replace("/", "");
 							let subject = `Hi! ${guest.username}, '${owner.username}' has invited you to join the group '${groupName}' `;
 							let template = hbs.compile(fs.readFileSync(emailTemplate).toString());
-							let html = template({owner, user:guest, groupName, confirmationCode});
+							let temporaryPassw = Math.random().toString(36).slice(-8);
+							let html = template({owner, user:guest, groupName, confirmationCode, publicUrl, temporaryPassw});
 
 							newRequest = new Request({
 								owner,
@@ -274,7 +235,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 					}
 				} else {
 					console.log('This user has no group yet');
-					newGroup = createNewGroup(finalUsers);
+					newGroup = createNewGroup(usersFromList);
 					saveGroup(newGroup);
 				}
 			})
@@ -283,31 +244,40 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 
 });
 
+
 router.get('/confirm/:confirmCode', (req, res, next) => {
 	let confirmationCode = req.params.confirmCode;
 	let status = req.query.status;
 
-	if (status !== 'pending' ) {
+	if (status === 'accepted') {
 		Request.findOneAndUpdate({confirmationCode}, {status}, {new:true}).populate('guest').populate('group')
 			.then((request) => {
 				User.findById(request.guest._id)
-					.then((guest) => {
-						if (status === 'accepted') {
-							Group.findByIdAndUpdate(request.group._id, {users: guest}, {new:true})
-								.then((group) => {
-									console.log(`${guest.username} added to the group ${group.groupName}`);
-									Request.findByIdAndDelete(request._id);
-								})
-								.catch(e => next(e));
-						} else if(status === 'rejected') {
-							console.log(`${guestRejected.username} rejected the invitation to the group ${group.groupName}`);
-							Request.findByIdAndDelete(request._id);
-						}
+					.then((guestAccepted) => {
+
+						Group.findByIdAndUpdate(request.group._id, {users: guestAccepted}, {new:true})
+							.then((group) => {
+								console.log(`${guestAccepted.username} added to the group ${group.groupName}`);
+								//Request.findByIdAndDelete(request._id);
+							})
+							.catch(e => next(e));
+					})
+					.catch(e => next(e)); //SI EL USUARIO QUE HA ACEPTADO LA INVITACION NO ESTÁ EN LA BBDD
+			})
+			.catch(e => next(e));
+	} else if(status === 'rejected') {
+		Request.findOneAndUpdate({confirmationCode}, {status}, {new:true}).populate('guest')
+			.then((request) => {
+				User.findById(request.guest._id)
+					.then((guestRejected) => {
+						console.log(`${guestRejected.username} rejected the invitation to the group`);
+						Request.findByIdAndDelete(request._id);
 					})
 					.catch(e => next(e));
 			})
 			.catch(e => next(e));
-	}	
+
+	}
 
 })
 
