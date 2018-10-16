@@ -24,8 +24,8 @@ let newGroup;
 router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	let owner = req.user;
 	let usersSelected = req.body.users;
-	const {groupName} = req.body;
-
+	let {groupName} = req.body;
+	groupName = groupName.toString().toLowerCase();
 
 	// [{"username":"luis", "email":"lugonperez@gmail.com"},{"username":"sara", "email":"sara@gmail.com"}]
 	
@@ -136,12 +136,15 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 			.then((groups) => {
 				let totalUsers = [];
 				let finalUsers = [];
+				let totalGroupsNames = [];
 
 				// total of users of this owner
 				if (groups && groups.length > 0) {
 					let group;
 					for (let i = 0; i < groups.length; i++) {
 						group = groups[i];
+						console.log('GRUPO', group);
+						totalGroupsNames.push(group.groupName);
 						if (group.users.length > 0) {
 							for (let j = 0; j < group.users.length; j++ ) {
 								totalUsers.push(group.users[j]);
@@ -161,7 +164,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 						});
 						
 						for (let i = 0; i < usersSelected.length; i++) {
-							console.log("It is a user FROM THE LIST because it has 'ID'");
+							//console.log("It is a user FROM THE LIST because it has 'ID'");
 							
 							if (usersSelected[i].hasOwnProperty('_id')) {
 								if (totalUsersId.includes(usersSelected[i]._id)) {
@@ -171,9 +174,8 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 									res.status(403).json({message: `The selected user '${userSelected.username}' has not valid 'id'`});
 								}
 
-
 							} else {
-								console.log("It is a NEW USER because it doesn't have 'ID'");
+								//console.log("It is a NEW USER because it doesn't have 'ID'");
 
 								// if (!process.env.GMAIL_USER || ! process.env.GMAIL_PASSW ) {
 								// 	throw new Error("You have to configure mail credentials in .private.env file.");
@@ -219,10 +221,10 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 						}
 					}
 
-					let groupNameFound = groups.find((thisGroup) => {
-						return thisGroup.groupName == groupName;
+					let groupNameFound = totalGroupsNames.find((thisGroupName) => {
+						return thisGroupName == groupName;
 					})
-					
+
 					if (groupNameFound) {
 						res.status(403).json({message: `You already have a group with the name '${groupName}'`});
 					} else {
@@ -242,7 +244,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 						let newRequest; 
 
 						for (var i = 0; i < finalUsers.length; i++) {
-							console.log('FINAL_USER---------', finalUsers[i]);
+							//console.log('FINAL_USER---------', finalUsers[i]);
 							let guest = finalUsers[i];
 							let confirmationCode = encodeURI(bcrypt.hashSync(guest.username, salt)).replace("/", "");
 							let subject = `Hi! ${guest.username}, '${owner.username}' has invited you to join the group '${groupName}' `;
@@ -285,28 +287,27 @@ router.get('/confirm/:confirmCode', (req, res, next) => {
 	let confirmationCode = req.params.confirmCode;
 	let status = req.query.status;
 
-	if (status === 'accepted') {
+	if (status !== 'pending' ) {
 		Request.findOneAndUpdate({confirmationCode}, {status}, {new:true}).populate('guest').populate('group')
 			.then((request) => {
 				User.findById(request.guest._id)
-					.then((guestAccepted) => {
-						Group.findByIdAndUpdate(request.group._id, {users: guestAccepted}, {new:true})
-							.then((group) => {
-								console.log(`${guestAccepted.username} added to the group ${group.groupName}`);
-								//eliminar la request una vez hemos añadido el usuario al grupo
-								//Request.findByIdAndDelete(request._id);
-							})
-							.catch(e => next(e));
+					.then((guest) => {
+						if (status === 'accepted') {
+							Group.findByIdAndUpdate(request.group._id, {users: guest}, {new:true})
+								.then((group) => {
+									console.log(`${guest.username} added to the group ${group.groupName}`);
+									Request.findByIdAndDelete(request._id);
+								})
+								.catch(e => next(e));
+						} else if(status === 'rejected') {
+							console.log(`${guestRejected.username} rejected the invitation to the group ${group.groupName}`);
+							Request.findByIdAndDelete(request._id);
+						}
 					})
 					.catch(e => next(e));
 			})
 			.catch(e => next(e));
-			
-		
-	} else if(status === 'rejected') {
-		//eliminamos la request ya que el usuario la ha rechazado
-		//
-	}
+	}	
 
 })
 
