@@ -111,7 +111,8 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		let groupNameFound = totalGNames.find((thisGroupName) => {
 			return thisGroupName == gName;
 		})
-		groupNameFound ? true : false;
+
+		return (groupNameFound) ? true : false;
 	}
 
 	const createNewGroup = (finalUsers) => {
