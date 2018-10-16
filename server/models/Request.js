@@ -6,7 +6,7 @@ const requestSchema = new Schema({
 	guest: { type: Schema.Types.ObjectId, ref: 'User', required: true },
 	group: { type: Schema.Types.ObjectId, ref: 'Group', required: true },
 	status: { type: String, enum: ['pending', 'accepted', 'rejected'], required: true, default:'pending' },
-	confirmationCode: { type: String, unique: true },
+	confirmationCode: { type: String, unique: true }
 }, {
 	timestamps: {
 		createdAt: 'created_at',

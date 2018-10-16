@@ -77,9 +77,14 @@
 					text-decoration: underline;
 				}
 				.temporary {
-
-					padding-top: 20px;
+					border: 2px solid #ededed;
+					padding-left: 10px;
+					padding-right: 10px;
 					text-align: left;
+					margin-bottom: 15px;
+				}
+				.temporary ul li span.email {
+					color: #24afc2;
 				}
 				.temporary ul {
 					padding-left: 0;
@@ -222,32 +227,11 @@
 																	<span><a class="link" href="{{url}}/groups/confirm/{{confirmationCode}}?status=accepted">Accept</a></span>
 																	<span><a class="link"  href="{{url}}/groups/confirm/{{confirmationCode}}?status=rejected">Reject</a></span>
 																</div>
-																{{#if temporary}}
-																	<section class="temporary">
-																		<h3 class="greeting">Wellcome to Giftphy!</h3>
-																		<ul>
-																			<li>
-																				<p>If you 'Accept', you will be able to access with this temporary credentials:</p>
-																				<p><strong>Email: </strong>{{user.email}}</p>
-																				<p><strong>Username: </strong>{{user.username}}</p>
-																				<p><strong>Password: </strong>{{user.username}}</p>
-																			</li>
-																			<li>
-																				<p>If you 'Reject', these data will be removed from our database.</p>
-																			</li>
-																		</ul>
-																		
-																		
-																		
-																		
-																		
-																		<small>Remember to update your password from your private area.</small>
-																	</section>
-																{{/if}}
 																<h4>Thank you!</h4>
 															</div>
 														</td>
 													</tr>
+
 												</table>
 											</div>
 											<!--[if mso | IE]>
@@ -279,6 +263,37 @@
 									  </table>
 								<![endif]-->
 								</td>
+																					
+								<td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;vertical-align:top;">
+									<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%"></table>
+										<tbody>
+											<tr>
+												<td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
+												<div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;line-height:1;text-align:center;color:#555;">
+													{{#if temporary}}
+														<section class="temporary">
+															<h3>Wellcome to Giftphy!</h3>
+															<ul>
+																<li><p>If you 'Accept', you will be able to access with this temporary credentials:</p> 
+																	<ul>
+																		<li><p><strong>Email: </strong><span class="email">{{user.email}}</span></p> </li>
+																		<li><p><strong>Username: </strong>{{user.username}}</p></li>
+																		<li><p><strong>Password: </strong>{{user.username}}</p></li>
+																	</ul>
+																</li>
+																<li><p>If you 'Reject', these data will be removed from our database.</p></li>
+															</ul>
+															<small>Remember to update your password from your private area.</small>
+															<h4>Thank you!</h4>
+														</section>
+													{{/if}}
+												</div>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</td>
+													
 							</tr>
 						</tbody>
 					</table>

@@ -22,16 +22,5 @@ const sendMail = (to, subject, html) => {
 	.then(info => console.log(info))
 	.catch(error => console.log(error))
 }
-  
 
-// transporter.sendMail({
-// 	from: fromEmail,
-// 	to: email1, 
-// 	subject: subject1, 
-// 	text: message1,
-// 	html: templates.templateEmail(message1)
-// })
-// .then(info => console.log(info))
-// .catch(error => console.log(error))
-  
 module.exports = sendMail;
