@@ -18,7 +18,7 @@ const salt = bcrypt.genSaltSync(bcryptSalt);
 const sendMail = require('../../mail/sendMail');
 const fs = require('fs');
 const hbs = require('hbs');
-const emailTemplate = './views/email/email.hbs';
+
 
 let newGroup;
 
@@ -107,6 +107,13 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		}
 	}
 
+	const isGroupNameRepeat = (totalGNames, gName) => {
+		let groupNameFound = totalGNames.find((thisGroupName) => {
+			return thisGroupName == gName;
+		})
+		groupNameFound ? true : false;
+	}
+
 	const createNewGroup = (finalUsers) => {
 		newGroup = new Group({
 			groupName,
@@ -127,6 +134,45 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		  	.catch(e => next(e));
 	}
 
+	const sendInvitations = (finalUsers, temporary) => {
+				
+		const url = `${process.env.PUBLIC_URL}:${process.env.PORT}`;
+		const emailTemplate = './views/email/email.hbs';
+		const template = hbs.compile(fs.readFileSync(emailTemplate).toString());
+
+		if (!process.env.GMAIL_USER || ! process.env.GMAIL_PASSW ) {
+			throw new Error("You have to configure mail credentials in .private.env file.");
+		}
+		
+		
+		for (var i = 0; i < finalUsers.length; i++) {
+			let guest = finalUsers[i];
+			let confirmationCode = encodeURI(bcrypt.hashSync(guest.username, salt)).replace("/", "");
+			let subject = `Hi! ${guest.username}, '${owner.username}' has invited you to join the group '${groupName}' `;
+			let html = template({owner, user:guest, groupName, confirmationCode, url, temporary});
+			
+			newRequest = new Request({
+				owner,
+				guest,
+				group: newGroup,
+				status: 'pending',
+				confirmationCode
+			});
+
+			newRequest.save()
+				.then(request => {
+					subject;
+					template;
+					html;
+					return sendMail(guest.email, subject, html)
+				})
+				.then(() => {
+					//res.status(403).json({message: `Email sent`});
+				})
+				.catch(e => next(e));
+		}
+	}
+
 	const groupParams = [owner, groupName, usersToInvite];
 
 	if (isGroupValid(...groupParams)) {
@@ -141,11 +187,9 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 					let totalGroupsNames = [];
 					let totalGroupsUsers = [];
 					let usersFromList = []; //users with 'ID' who exist in the DDBB
-					let usersFromForm = []; //users without 'ID' who can exist or not in the DDBB;
 					let registeredUsers = [];
 					let unRegisteredUsers = [];
-					let finalUsers = [];
-					//let userGroup;
+
 
 					for (let i = 0; i < groups.length; i++) {
 						totalGroupsNames.push(groups[i].groupName);
@@ -155,9 +199,16 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 							}
 						}
 					}
-
-					totalGroupsUsers = _.uniq(totalGroupsUsers);
 					
+					if (isGroupNameRepeat(totalGroupsNames, groupName)) {
+						res.status(403).json({message: `You already have a group with the name '${groupName}'`});
+					} else {
+						newGroup = createNewGroup(null);
+						saveGroup(newGroup);
+					}
+					
+					totalGroupsUsers = _.uniq(totalGroupsUsers);
+
 					if (totalGroupsUsers && totalGroupsUsers.length > 0) {
 						let totalGroupsUsersId = totalGroupsUsers.map((user) => {
 							user = user.toObject();
@@ -186,6 +237,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 										if (user) {
 											console.log(colors.green('SI esta en DDBB', user))
 											registeredUsers.push(user);
+											console.log(colors.blue('11111111111111111'))
 										} else {
 											console.log(colors.red('NO esta en DDBB', usersToInvite[i]));
 											unRegisteredUsers.push(usersToInvite[i]);
@@ -204,7 +256,7 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 								if (unRegisteredUsers && unRegisteredUsers.length > 0) {
 							
 									let newUser;
-									let promises = unRegisteredUsers.map((user) => {
+									let registerUsersTemp = unRegisteredUsers.map((user) => {
 										
 										newUser = new User({
 											username: user.username,
@@ -217,77 +269,27 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 											.catch(e => next(e));
 									})
 
-									Promise.all(promises).then((unRegisteredUsersWithId) => {
-										console.log(colors.yellow('unRegisteredUsersWithId', unRegisteredUsersWithId))
-									})
-
+									Promise.all(registerUsersTemp)
+										.then((unRegisteredUsersWithId) => {
+											console.log(colors.yellow('unRegisteredUsersWithId', unRegisteredUsersWithId))
+											console.log(colors.blue('22222222222222222222'));
+											if (unRegisteredUsersWithId && unRegisteredUsersWithId > 0) {
+												//sendInvitations(unRegisteredUsersWithId, true)
+											}
+										})
+										.catch(e => next(e))
 								}
-								// usersFromForm.push(newUser);
+								if (registeredUsers && registeredUsers > 0){
+									//sendInvitations(registeredUsers, false)
+								}
 							})
 							.catch(e => next(e))
-					}
-
-					debugger;
-
-					//Check the group name
-					let groupNameFound = totalGroupsNames.find((thisGroupName) => {
-						return thisGroupName == groupName;
-					})
-
-					if (groupNameFound) {
-						res.status(403).json({message: `You already have a group with the name '${groupName}'`});
 					} else {
-						newGroup = createNewGroup(null);
-						saveGroup(newGroup);
-					}
-
-						
-					finalUsers = usersFromList.concat(usersFromForm);
-
-					if (finalUsers && finalUsers.length > 0) {
-
-						if (!process.env.GMAIL_USER || ! process.env.GMAIL_PASSW ) {
-						 	throw new Error("You have to configure mail credentials in .private.env file.");
-						}
-
-						let newRequest; 
-
-						for (var i = 0; i < finalUsers.length; i++) {
-							const publicUrl = process.env.PUBLIC_URL;
-							const port = process.env.PORT;
-							let guest = finalUsers[i];
-							let confirmationCode = encodeURI(bcrypt.hashSync(guest.username, salt)).replace("/", "");
-							let subject = `Hi! ${guest.username}, '${owner.username}' has invited you to join the group '${groupName}' `;
-							let template = hbs.compile(fs.readFileSync(emailTemplate).toString());
-							//como guest ahora tiene ID tengo que hacer la condicion diferente en el handlebars
-							let html = template({owner, user:guest, groupName, confirmationCode, publicUrl, port});
-							
-							newRequest = new Request({
-								owner,
-								guest,
-								group: newGroup,
-								status: 'pending',
-								confirmationCode
-							});
-
-							newRequest.save()
-								.then(request => {
-									subject;
-									template;
-									html;
-									return sendMail(guest.email, subject, html)
-								})
-								.then(() => {
-									//res.status(403).json({message: `Email sent`});
-								})
-								.catch(e => next(e));
-						}
-					} else {
-						console.log('This user has any group but not users in these groups');
+						console.log('This user has any group but not users in them');
 					}
 				} else {
 					console.log('This user has no group yet');
-					newGroup = createNewGroup(finalUsers);
+					newGroup = createNewGroup(null);
 					saveGroup(newGroup);
 				}
 			})
