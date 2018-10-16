@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { ensureLoggedIn} = require('connect-ensure-login');
 const _ = require('lodash');
+const colors = require('colors');
 
 const Group = require('../../models/Group');
 const User = require('../../models/User');
@@ -24,7 +25,7 @@ let newGroup;
 // (C)RUD -> Create a NEW Group
 router.post('/new', ensureLoggedIn(), (req, res, next) => {
 	let owner = req.user;
-	let usersSelected = req.body.users;
+	let usersToInvite = req.body.users;
 	let {groupName} = req.body;
 	groupName = groupName.toString().toLowerCase();
 
@@ -85,12 +86,12 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		
 	}
 
-	const isGroupValid = (owner, groupName, usersSelected) => {
+	const isGroupValid = (owner, groupName, usersToInvite) => {
 		if (isOwnerValid(owner)) {
 			if (isGroupNameValid(groupName)) {
-				if (areUsersValid(usersSelected)) {
-					usersSelected = JSON.parse(usersSelected);
-					if (isEachUserValid(usersSelected)) {
+				if (areUsersValid(usersToInvite)) {
+					usersToInvite = JSON.parse(usersToInvite);
+					if (isEachUserValid(usersToInvite)) {
 						return true;
 					} else {
 						res.status(403).json({message: 'There is any user with a invalid type'});
@@ -106,14 +107,14 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		}
 	}
 
-	const createNewGroup = (usersFromList) => {
+	const createNewGroup = (finalUsers) => {
 		newGroup = new Group({
 			groupName,
 			owner
 		})
 
-		if (usersFromList) {
-			newGroup.users = usersFromList
+		if (finalUsers) {
+			newGroup.users = finalUsers
 		}
 		return newGroup;
 	}
@@ -126,61 +127,108 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 		  	.catch(e => next(e));
 	}
 
-	const groupParams = [owner, groupName, usersSelected];
+	const groupParams = [owner, groupName, usersToInvite];
 
 	if (isGroupValid(...groupParams)) {
-		usersSelected = JSON.parse(usersSelected);
+		usersToInvite = JSON.parse(usersToInvite);
 
 		Group.find({owner}).populate('users', {username:1, email:1})
 			.then((groups) => {
-				let totalUsers = [];
-				let usersFromList = []; //users with 'ID' who exist in the DDBB
-				let usersFromForm = []; //users without 'ID' who can exist or not in the DDBB;
-				let totalGroupsNames = [];
 
 				// total of users of this owner
 				if (groups && groups.length > 0) {
-					let group;
+
+					let totalGroupsNames = [];
+					let totalGroupsUsers = [];
+					let usersFromList = []; //users with 'ID' who exist in the DDBB
+					let usersFromForm = []; //users without 'ID' who can exist or not in the DDBB;
+					let registeredUsers = [];
+					let unRegisteredUsers = [];
+					let finalUsers = [];
+					//let userGroup;
+
 					for (let i = 0; i < groups.length; i++) {
-						group = groups[i];
-						console.log('GRUPO', group);
-						totalGroupsNames.push(group.groupName);
-						if (group.users.length > 0) {
-							for (let j = 0; j < group.users.length; j++ ) {
-								totalUsers.push(group.users[j]);
+						totalGroupsNames.push(groups[i].groupName);
+						if (groups[i].users && groups[i].users.length > 0) {
+							for (let j = 0; j < groups[i].users.length; j++ ) {
+								totalGroupsUsers.push(groups[i].users[j]);
 							}
 						}
 					}
-					totalUsers = _.uniq(totalUsers);
+
+					totalGroupsUsers = _.uniq(totalGroupsUsers);
 					
-					if (totalUsers.length > 0) {
-						let totalUsersId = totalUsers.map((user) => {
+					if (totalGroupsUsers && totalGroupsUsers.length > 0) {
+						let totalGroupsUsersId = totalGroupsUsers.map((user) => {
 							user = user.toObject();
+							//extra comprobation
 							if (Object.prototype.hasOwnProperty.call(user, '_id')) {
 								return (user._id.toString());
 							} else {
-								console.log('This user of the owner does not have an _id')
+								console.log('This user of the OWNER does not have an _id')
 							}
 						});
-						
-						for (let i = 0; i < usersSelected.length; i++) {
-							console.log("It is a user FROM THE LIST because it has 'ID'");
-							
-							if (usersSelected[i].hasOwnProperty('_id')) {
-								if (totalUsersId.includes(usersSelected[i]._id)) {
-									usersFromList.push(usersSelected[i]);
+						let checkEmails;
+
+						for (let i = 0; i < usersToInvite.length; i++) {
+							//It is a user FROM THE LIST because it has 'ID'
+							if (usersToInvite[i].hasOwnProperty('_id')) {
+								if (totalGroupsUsersId.includes(usersToInvite[i]._id)) {
+									usersFromList.push(usersToInvite[i]);
 								} else {
 									res.status(403).json({message: `The selected user '${userSelected.username}' has not valid 'id'`});
 								}
-
 							} else {
-								console.log("It is a NEW USER FROM THE FORM because it doesn't have 'ID'");
-
-								usersFromForm.push(usersSelected[i]);
+								//It is a NEW USER FROM THE FORM because it doesn't have 'ID'
+								console.log(colors.cyan('EMAIL', usersToInvite[i].email));
+								checkEmails = Promise.all([User.findOne({email:usersToInvite[i].email})
+									.then((user) => {
+										if (user) {
+											console.log(colors.green('SI esta en DDBB', user))
+											registeredUsers.push(user);
+										} else {
+											console.log(colors.red('NO esta en DDBB', usersToInvite[i]));
+											unRegisteredUsers.push(usersToInvite[i]);
+										}
+									})
+									.catch(e => next(e))
+								])
 							}
 						}
+
+						checkEmails
+							.then(()=>{
+								registeredUsers = usersFromList.concat(registeredUsers);
+								console.log(colors.magenta('UNREGISTEREDUSERS ====>', unRegisteredUsers));
+							})
+							.catch(e => next(e))
+
+						
+
+						if (unRegisteredUsers && unRegisteredUsers.length > 0) {
+							let newUser;
+							let unRegisteredUsersWithId = unRegisteredUsers.map((user) => {
+								
+								newUser = new User({
+									username: user.username,
+									password: user.username,
+									email: user.email
+								});
+
+								return newUser.save()
+									.then(newUser => {
+										return newUser;
+									})
+									.catch(e => next(e));
+							})
+							console.log('unRegisteredUsersWithId =========================>', unRegisteredUsersWithId);
+						}
+						// usersFromForm.push(newUser);
 					}
 
+					debugger;
+
+					//Check the group name
 					let groupNameFound = totalGroupsNames.find((thisGroupName) => {
 						return thisGroupName == groupName;
 					})
@@ -188,13 +236,14 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 					if (groupNameFound) {
 						res.status(403).json({message: `You already have a group with the name '${groupName}'`});
 					} else {
-						//newGroup = createNewGroup(usersFromList); //??
 						newGroup = createNewGroup(null);
 						saveGroup(newGroup);
 					}
 
-					//SI HAY USUARIOS EN EL LISTADO //(users con ID)
-					if (usersFromList && usersFromList.length > 0) {
+						
+					finalUsers = usersFromList.concat(usersFromForm);
+
+					if (finalUsers && finalUsers.length > 0) {
 
 						if (!process.env.GMAIL_USER || ! process.env.GMAIL_PASSW ) {
 						 	throw new Error("You have to configure mail credentials in .private.env file.");
@@ -202,16 +251,16 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 
 						let newRequest; 
 
-						for (var i = 0; i < usersFromList.length; i++) {
+						for (var i = 0; i < finalUsers.length; i++) {
 							const publicUrl = process.env.PUBLIC_URL;
 							const port = process.env.PORT;
-							let guest = usersFromList[i];
+							let guest = finalUsers[i];
 							let confirmationCode = encodeURI(bcrypt.hashSync(guest.username, salt)).replace("/", "");
 							let subject = `Hi! ${guest.username}, '${owner.username}' has invited you to join the group '${groupName}' `;
 							let template = hbs.compile(fs.readFileSync(emailTemplate).toString());
-							let temporaryPassw = Math.random().toString(36).slice(-8);
-							let html = template({owner, user:guest, groupName, confirmationCode, publicUrl, temporaryPassw});
-
+							//como guest ahora tiene ID tengo que hacer la condicion diferente en el handlebars
+							let html = template({owner, user:guest, groupName, confirmationCode, publicUrl, port});
+							
 							newRequest = new Request({
 								owner,
 								guest,
@@ -232,16 +281,17 @@ router.post('/new', ensureLoggedIn(), (req, res, next) => {
 								})
 								.catch(e => next(e));
 						}
+					} else {
+						console.log('This user has any group but not users in these groups');
 					}
 				} else {
 					console.log('This user has no group yet');
-					newGroup = createNewGroup(usersFromList);
+					newGroup = createNewGroup(finalUsers);
 					saveGroup(newGroup);
 				}
 			})
 			.catch(e => next(e));
 	}
-
 });
 
 
@@ -252,26 +302,46 @@ router.get('/confirm/:confirmCode', (req, res, next) => {
 	if (status === 'accepted') {
 		Request.findOneAndUpdate({confirmationCode}, {status}, {new:true}).populate('guest').populate('group')
 			.then((request) => {
-				User.findById(request.guest._id)
-					.then((guestAccepted) => {
+				let user;
+				//si el usuario tiene ID
+				if (request.guest._id) {
+					User.findById(request.guest._id)
+						.then((guestAccepted) => {		
+							user = guestAccepted;
+						})
+						.catch(e => next(e));
+				//si el usuario NO tiene ID
+				} else {
+					// let newUserAccepted = new User({
+					// 	username: request.guest.username,
+					// 	password: request.guest.username,
+					// 	email: request.guest.email
+					// });
 
-						Group.findByIdAndUpdate(request.group._id, {users: guestAccepted}, {new:true})
-							.then((group) => {
-								console.log(`${guestAccepted.username} added to the group ${group.groupName}`);
-								//Request.findByIdAndDelete(request._id);
-							})
-							.catch(e => next(e));
+					// newUserAccepted.save()
+					// 	.then(newUserAccepted => {
+					// 		user = newUserAccepted;
+					// 	})
+					// 	.catch(e => next(e));
+				}
+				console.log('USER------------------------>', user);
+
+				Group.findByIdAndUpdate(request.group._id, {users: user}, {new:true})
+					.then((group) => {
+						console.log(`${user.username} added to the group ${group.groupName}`);
+						//Request.findByIdAndDelete(request._id);
 					})
-					.catch(e => next(e)); //SI EL USUARIO QUE HA ACEPTADO LA INVITACION NO ESTÁ EN LA BBDD
+					.catch(e => next(e));
 			})
 			.catch(e => next(e));
+
 	} else if(status === 'rejected') {
 		Request.findOneAndUpdate({confirmationCode}, {status}, {new:true}).populate('guest')
 			.then((request) => {
 				User.findById(request.guest._id)
 					.then((guestRejected) => {
 						console.log(`${guestRejected.username} rejected the invitation to the group`);
-						Request.findByIdAndDelete(request._id);
+						//Request.findByIdAndDelete(request._id);
 					})
 					.catch(e => next(e));
 			})
