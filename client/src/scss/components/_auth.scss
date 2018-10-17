@@ -1,8 +1,33 @@
 .auth-form {
 	border: 2px solid black;
 	border-radius: 8px;
-	padding: 15px;
-	width: 50%;
-	color: $color-brand-green;
+	padding: 1rem 2.5em 2rem;
+	width: 100%;
+	.form-control {
+		font-size: $font-size-body;
+	}
 	@include centerer;
+	@include if-tablet-portrait {
+		width: 60%;
+	}
+	@include if-desktop {
+		width: 30%;
+	}
 }
+
+.auth-form-title {
+	padding-bottom: 1.5rem;
+	color: $color-brand-dark;
+	text-align: center;
+}
+
+.auth-label {
+	font-size: $font-size-body;
+}
+
+.auth-form-footer {
+	text-align: center;
+	padding-top: 1rem;
+}
+
+
