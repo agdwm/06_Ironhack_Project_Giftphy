@@ -1,14 +1,16 @@
-import React from "react";
+// auth/Signup.js
+import React, { Component } from "react";
+import AuthService from "./AuthService";
 import {Button, ControlLabel, FormControl, FormGroup, HelpBlock} from "react-bootstrap";
 //import * as constants from '../../config/Constants';
 import {FormErrors} from './AuthFormErrors';
 
-export default class AuthForm extends React.Component {
+class SignupForm extends Component {
 	constructor(props, context) {
 		super(props, context);
 	
 		this.handleChange = this.handleChange.bind(this);
-		//this.handleFormSubmit = this.handleFormSubmit.bind(this);
+		this.handleFormSubmit = this.handleFormSubmit.bind(this);
 
 		this.state = {
 			username: '',
@@ -20,6 +22,7 @@ export default class AuthForm extends React.Component {
 			formErrors: {username: '', email: '', password: ''},
 			formValid: false
 		};
+		this.service = new AuthService();
 	}
   
 	handleFormSubmit = e => {
@@ -85,35 +88,41 @@ export default class AuthForm extends React.Component {
   
 	render() {
 		return (
-			<form onSubmit={this.handleFormSubmit}>
-				<FormGroup controlId="username" className={`form-group ${this.errorClass(this.state.formErrors.username)}`}>
-					<ControlLabel bsClass="auth-label">Username:</ControlLabel>
-					<FormControl bsSize="large" type="text" name="username" value={this.state.username} placeholder="Username" onChange={this.handleChange}/>
-					<FormControl.Feedback />
-				</FormGroup>
+			<section className="auth-form">
+				<header>
+					<h2 className="auth-form-title title">Welcome to Giftphy!</h2>
+				</header>
+				<form onSubmit={this.handleFormSubmit}>
+					<FormGroup controlId="username" className={`form-group ${this.errorClass(this.state.formErrors.username)}`}>
+						<ControlLabel bsClass="auth-label">Username:</ControlLabel>
+						<FormControl bsSize="large" type="text" name="username" value={this.state.username} placeholder="Username" onChange={this.handleChange}/>
+						<FormControl.Feedback />
+					</FormGroup>
 
-				<FormGroup controlId="email" className={`form-group ${this.errorClass(this.state.formErrors.email)}`}>
-					<ControlLabel bsClass="auth-label">Email:</ControlLabel>
-					<FormControl bsSize="large" type="email" name="email" value={this.state.email} placeholder="Email" onChange={this.handleChange}/>
-					<FormControl.Feedback />
-				</FormGroup>
+					<FormGroup controlId="email" className={`form-group ${this.errorClass(this.state.formErrors.email)}`}>
+						<ControlLabel bsClass="auth-label">Email:</ControlLabel>
+						<FormControl bsSize="large" type="email" name="email" value={this.state.email} placeholder="Email" onChange={this.handleChange}/>
+						<FormControl.Feedback />
+					</FormGroup>
 
-				<FormGroup controlId="password" className={`form-group ${this.errorClass(this.state.formErrors.password)}`}>
-					<ControlLabel bsClass="auth-label">Password:</ControlLabel>
-					<FormControl bsSize="large" type="password" name="password" value={this.state.password} placeholder="Password" onChange={this.handleChange}/>
-					<FormControl.Feedback />
-				</FormGroup>
+					<FormGroup controlId="password" className={`form-group ${this.errorClass(this.state.formErrors.password)}`}>
+						<ControlLabel bsClass="auth-label">Password:</ControlLabel>
+						<FormControl bsSize="large" type="password" name="password" value={this.state.password} placeholder="Password" onChange={this.handleChange}/>
+						<FormControl.Feedback />
+					</FormGroup>
 
-				<div className="auth-form-errors">
-					<FormErrors formErrors={this.state.formErrors} />
-		  	 	</div>
+					<div className="auth-form-errors">
+						<FormErrors formErrors={this.state.formErrors} />
+					</div>
 
-				<div className="auth-form-footer">
-					<Button className="brand-btn" bsSize="large" block type="submit" disabled={!this.state.formValid}>Sign Up</Button>
-				</div>
-			</form>
+					<div className="auth-form-footer">
+						<Button className="brand-btn" bsSize="large" block type="submit" disabled={!this.state.formValid}>Sign Up</Button>
+					</div>
+				</form>
+			</section>
 		);
 	}
 }
   
 //render(<AuthForm />);
+export default SignupForm;

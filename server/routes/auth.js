@@ -3,6 +3,7 @@ const router = express.Router();
 const passport = require('passport');
 const { ensureLoggedIn, ensureLoggedOut } = require('connect-ensure-login');
 const User = require('../models/User');
+const colors = require('colors');
 
 // Bcrypt to encrypt passwords
 const bcrypt = require('bcrypt');
@@ -10,6 +11,9 @@ const bcrypt = require('bcrypt');
 
 const login = (req, user) => {
 	return new Promise((resolve, reject) => {
+		console.log('req.login ')
+		console.log(user)
+
 		req.login(user, err => {
 			if (err) {
 				reject(new Error('Something went wrong'))
@@ -28,6 +32,9 @@ router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 
 	// Check for non empty user or password
 	if (!username || !password || !email) {
+		console.log(colors.magenta('username', username));
+		console.log(colors.magenta('password', password));
+		console.log(colors.magenta('email', email));
 		next(new Error('You must provide valid credentials'));
 		return;
 	} else if(!email_pattern.test(email)){
@@ -54,20 +61,24 @@ router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 			const salt = bcrypt.genSaltSync(10);
 			const hashPass = bcrypt.hashSync(password, salt);
 
-			let newUser = new User({
+			return new User({
 				username,
 				password: hashPass,
 				email
-			});
-
-			newUser.save()
-				.then( user => res.status(201).json({user:user, message: 'User created'}))
+			}).save()
+				//.then( savedUser => login(req, savedUser)) // Login the user using passport
+				.then((user) => {
+					res.status(201).json({user:user, message: 'User created'})
+				})	
 				.catch(e => next(e));
-		}).catch(e => next(e));
+				
+		})
+		.catch(e => next(e));
 });
 
 // LOGIN
 router.post('/login', ensureLoggedOut(), (req, res, next) => {
+	//Only: "email" & "password"
 	passport.authenticate('local', (err, theUser, failureDetails) => {
 		// Check for errors
 		if (err) next(new Error('Something went wrong')); 
