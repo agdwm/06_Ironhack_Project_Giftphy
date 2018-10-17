@@ -3,25 +3,23 @@ import axios from "axios";
 class AuthService {
 	constructor() {
 		this.service = axios.create({
-			baseURL: "http://localhost:3010/api/auth",
+			baseURL: "http://localhost:3000/auth",
 			withCredentials: true
 		});
 	}
 
-	signup = (username, password) => {
-		return this.service
-		.post("/signup", { username, password })
+	signup = (username, password, email) => {
+		return this.service.post("/signup", { username, password, email })
 		.then(response => response.data);
 	};
 
-	login = (username, password) => {
-		return this.service
-		.post("/login", { username, password })
+	login = (username, password, email ) => {
+		return this.service.post("/login", { username, password, email })
 		.then(response => response.data);
 	};
 
 	loggedin = () => {
-		return this.service.get("/currentUser").then(response => response.data);
+		return this.service.get("/loggedin").then(response => response.data);
 	};
 
 	logout = () => {
