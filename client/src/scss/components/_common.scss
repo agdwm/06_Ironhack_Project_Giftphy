@@ -3,7 +3,13 @@
 }
 
 .brand-btn {
-	background-color: #FF8A80;
+	background-color: $color-brand-orange;
 	color: $color-base-light;
 	font-weight: 600;
+}
+
+.brand-btn:disabled,
+.brand-btn:disabled:hover {
+	@extend .brand-btn;
+	background-color: lighten($color-brand-orange, 10%);
 }

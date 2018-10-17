@@ -1,5 +1,5 @@
 .auth-form {
-	border: 2px solid black;
+	border: 1px solid $color-base-medium;
 	border-radius: 8px;
 	padding: 1rem 2.5em 2rem;
 	width: 100%;
@@ -30,4 +30,8 @@
 	padding-top: 1rem;
 }
 
+.auth-form-errors {
+	color: $color-danger;
+	font-size: $font-size-xs;
+}
 
