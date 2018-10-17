@@ -23,7 +23,7 @@ const login = (req, user) => {
 // SIGNUP
 router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 	
-	let {username,password, email} = req.body;
+	let {username, password, email} = req.body;
 	const email_pattern = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
 	// Check for non empty user or password
@@ -81,11 +81,12 @@ router.post('/login', ensureLoggedOut(), (req, res, next) => {
 });
 
 // LOGGEDIN
-router.get('/loggedin/', (req, res, next) => {
+router.get('/loggedin', (req, res, next) => {
 	if (req.user) {
 	  	res.status(200).json({user:req.user, message:'User Logged in'});
 	} else {
-	  	next(new Error('Not logged in'));
+		//next(new Error('Not logged in'));
+		res.status(200).json({message:'Not logged in'});
 	}
 })
 
