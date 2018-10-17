@@ -1,0 +1,10 @@
+/* Menu 'width' when it is open in mobile
+========================================================================== */
+$menu-mobile-transition: left .3s ease-in !default;
+
+/* Breakpoints
+========================================================================== */
+$mobile-portrait-width: 480px !default;
+$mobile-landscape-width: 767px !default;
+$tablet-portrait-width: $mobile-landscape-width + 1 !default;
+$tablet-landscape-width: 1024px !default;
