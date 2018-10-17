@@ -1,0 +1,8 @@
+.auth-form {
+	border: 2px solid black;
+	border-radius: 8px;
+	padding: 15px;
+	width: 50%;
+	color: $color-brand-green;
+	@include centerer;
+}

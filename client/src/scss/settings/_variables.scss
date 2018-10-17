@@ -1,0 +1,32 @@
+/* Colors
+========================================================================== */
+$color-brand-dark: #353C48;
+$color-brand-cyan: #84FFFF;
+$color-brand-orange: #FF8A80;
+$color-brand-lilac: #AB8CE4;
+$color-brand-green: #01C0C8;
+
+
+$color-base-medium: #DBDBDB !default;
+$color-base-dark: #000000 !default;
+$color-base-light: #FFFFFF !default;
+
+/* Fonts
+========================================================================== */
+@import url("https://fonts.googleapis.com/css?family=Poiret+One");
+@import url("https://fonts.googleapis.com/css?family=Poiret+One|Raleway:400,600");
+
+// Font Families
+$brand-font-family: "Poiret One", cursive !default;
+$main-font-family: "Raleway", sans-serif !default;
+
+//Font Sizes
+$font-size-body: 1.4rem !default;
+
+$font-size-h1: 3.6rem !default;
+$font-size-h2: 2.8rem !default;
+$font-size-h3: 2.4rem !default;
+$font-size-h4: 2rem !default;
+$font-size-h5: 1.8rem !default;
+$font-size-h6: 1.6 !default;
+$font-size-xs: 1.1 !default;
