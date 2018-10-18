@@ -1,7 +1,7 @@
 /* Responsive utils
 	========================================================================== */
 
-	@mixin if-mobile-portrait {
+@mixin if-mobile-portrait {
 	@media (max-width: #{$mobile-portrait-width}) {
 		@content;
 	}
@@ -42,3 +42,11 @@
 		@content;
 	}
 }
+
+@mixin if-desktop-landscape {
+	@media (min-width: #{$desktop-landscape}) {
+		@content;
+	}
+}
+
+

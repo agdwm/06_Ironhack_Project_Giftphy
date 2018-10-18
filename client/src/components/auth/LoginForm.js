@@ -9,15 +9,12 @@ class SignupLogin extends Component {
 	constructor(props, context) {
 		super(props, context);
 
-		this.handleChange = this.handleChange.bind(this);
-		this.handleFormSubmit = this.handleFormSubmit.bind(this);
-
 		this.state = {
 			email: '',
 			password: '',
 			emailValid: false,
 			passwordValid: false,
-			formErrors: {email: '', password: '', response: ''},
+			formErrors: {email: '', password: '', error: ''},
 			formValid: false
 		};
 		this.service = new AuthService();
@@ -25,22 +22,22 @@ class SignupLogin extends Component {
   
 	handleFormSubmit = e => {
 		e.preventDefault();
-		const {password, email, formErrors} = this.state;
+		const {email, password, formErrors} = this.state;
 
-		this.setState({formErrors: {...formErrors, response: undefined}})
+		this.setState({formErrors: {...formErrors, error: undefined}})
 
-		this.service.login(password, email)
+		this.service.login(email, password)
 			.then(response => {
 				this.setState({
 					email: '',
 					password: ''
 				});
-				console.log('ERROR MESSAGE', response.message);
+
 				this.props.setUser({message: response.message, response: response.user});
 			})
-			.catch(error => {
-				let response = error.response.data.message;
-				this.setState({formErrors: {...formErrors, response}})
+			.catch(err => {
+				let error = err.response.data.message;
+				this.setState({formErrors: {...formErrors, error}})
 			});
 	};
 
@@ -56,7 +53,6 @@ class SignupLogin extends Component {
 		let fieldValidationErrors = this.state.formErrors;
 		let emailValid = this.state.emailValid;
 		let passwordValid = this.state.passwordValid;
-		console.log('FIELD VALIDATE ERRORS', fieldValidationErrors);
 
 		switch(fieldName) {
 			case 'email':
@@ -92,17 +88,17 @@ class SignupLogin extends Component {
 				<header>
 					<h2 className="auth-form-title title">Welcome to Giftphy!</h2>
 				</header>
-				<form onSubmit={this.handleFormSubmit}>
+				<form onSubmit={e => this.handleFormSubmit(e)}>
 
 					<FormGroup controlId="email" className={`form-group ${this.errorClass(this.state.formErrors.email)}`}>
 						<ControlLabel bsClass="auth-label">Email:</ControlLabel>
-						<FormControl bsSize="large" type="email" name="email" value={this.state.email} placeholder="Email" onChange={this.handleChange}/>
+						<FormControl bsSize="large" type="email" name="email" value={this.state.email} placeholder="Email" onChange={ e => this.handleChange(e)}/>
 						<FormControl.Feedback />
 					</FormGroup>
 
 					<FormGroup controlId="password" className={`form-group ${this.errorClass(this.state.formErrors.password)}`}>
 						<ControlLabel bsClass="auth-label">Password:</ControlLabel>
-						<FormControl bsSize="large" type="password" name="password" value={this.state.password} placeholder="Password" onChange={this.handleChange}/>
+						<FormControl bsSize="large" type="password" name="password" value={this.state.password} placeholder="Password" onChange={ e => this.handleChange(e)}/>
 						<FormControl.Feedback />
 					</FormGroup>
 

@@ -9,9 +9,6 @@ class SignupForm extends Component {
 	constructor(props, context) {
 		super(props, context);
 
-		this.handleChange = this.handleChange.bind(this);
-		this.handleFormSubmit = this.handleFormSubmit.bind(this);
-
 		this.state = {
 			username: '',
 			email: '',
@@ -19,7 +16,7 @@ class SignupForm extends Component {
 			usernameValid: false,
 			emailValid: false,
 			passwordValid: false,
-			formErrors: {username: '', email: '', password: '', response: ''},
+			formErrors: {username: '', email: '', password: '', error: ''},
 			formValid: false
 		};
 		this.service = new AuthService();
@@ -29,9 +26,9 @@ class SignupForm extends Component {
 		e.preventDefault();
 		const {username, password, email, formErrors} = this.state;
 
-		this.setState({formErrors: {...formErrors, response: undefined}})
+		this.setState({formErrors: {...formErrors, error: undefined}})
 		
-		this.service.signup(username, password, email)
+		this.service.signup(username, email, password)
 			.then(response => {
 				this.setState({
 					username: '',
@@ -40,9 +37,9 @@ class SignupForm extends Component {
 				});
 				this.props.setUser({message: response.message, response: response.user});
 			})
-			.catch(error => {
-				let response = error.response.data.message;
-				this.setState({formErrors: {...formErrors, response}})
+			.catch(err => {
+				let error = err.response.data.message;
+				this.setState({formErrors: {...formErrors, error}})
 			});
 	};
 
@@ -97,22 +94,22 @@ class SignupForm extends Component {
 				<header>
 					<h2 className="auth-form-title title">Welcome to Giftphy!</h2>
 				</header>
-				<form onSubmit={this.handleFormSubmit}>
+				<form onSubmit={e => this.handleFormSubmit(e)}>
 					<FormGroup controlId="username" className={`form-group ${this.errorClass(this.state.formErrors.username)}`}>
 						<ControlLabel bsClass="auth-label">Username:</ControlLabel>
-						<FormControl bsSize="large" type="text" name="username" value={this.state.username} placeholder="Username" onChange={this.handleChange}/>
+						<FormControl bsSize="large" type="text" name="username" value={this.state.username} placeholder="Username" onChange={ e => this.handleChange(e)}/>
 						<FormControl.Feedback />
 					</FormGroup>
 
 					<FormGroup controlId="email" className={`form-group ${this.errorClass(this.state.formErrors.email)}`}>
 						<ControlLabel bsClass="auth-label">Email:</ControlLabel>
-						<FormControl bsSize="large" type="email" name="email" value={this.state.email} placeholder="Email" onChange={this.handleChange}/>
+						<FormControl bsSize="large" type="email" name="email" value={this.state.email} placeholder="Email" onChange={ e => this.handleChange(e)}/>
 						<FormControl.Feedback />
 					</FormGroup>
 
 					<FormGroup controlId="password" className={`form-group ${this.errorClass(this.state.formErrors.password)}`}>
 						<ControlLabel bsClass="auth-label">Password:</ControlLabel>
-						<FormControl bsSize="large" type="password" name="password" value={this.state.password} placeholder="Password" onChange={this.handleChange}/>
+						<FormControl bsSize="large" type="password" name="password" value={this.state.password} placeholder="Password" onChange={ e => this.handleChange(e)}/>
 						<FormControl.Feedback />
 					</FormGroup>
 

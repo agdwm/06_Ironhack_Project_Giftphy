@@ -1,27 +1,13 @@
 const bcrypt = require('bcrypt');
 const { ensureLoggedIn, ensureLoggedOut } = require('connect-ensure-login');
 const express = require('express');
-const {Conflict} = require('http-errors')
+const {Conflict, Forbidden} = require('http-errors')
 const passport = require('passport');
 
 const User = require('../models/User');
 
 
 const router = express.Router();
-
-
-const login = (req, user) => {
-	return new Promise((resolve, reject) => {
-
-		req.login(user, err => {
-			if (err) {
-				reject(new Error('Something went wrong'))
-			} else {
-				resolve(user);
-			}
-		})
-	})
-}
 
 
 // SIGNUP
@@ -69,15 +55,23 @@ router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 // LOGIN
 router.post('/login', ensureLoggedOut(), (req, res, next) => {
 	//Only: "email" & "password"
-	passport.authenticate('local', (err, theUser, failureDetails) => {
+	passport.authenticate('local', (err, user, failureDetails) => {
 		// Check for errors
-		if (err) next(new Error('Something went wrong')); 
-		if (!theUser) next(failureDetails)
+		if (err) { 
+			return next(err); 
+		}
+		
+		if (! user) {
+			return res.status(401).json({ success : false, message : 'Authentication failed' });
+		}
 
 		// Return user and logged in
-		login(req, theUser)
-			.then(user => res.status(201).json({user:req.user, message: 'User logged'}))
-			.catch(e => next(e));
+		req.logIn(user, (err) => {
+			if (err) { 
+				return next(err); 
+			}
+			return res.status(201).json({success : true, user, message: 'Authentication succeeded'})
+		});
 	})(req, res, next);
 });
 
