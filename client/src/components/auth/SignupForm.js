@@ -19,7 +19,7 @@ class SignupForm extends Component {
 			usernameValid: false,
 			emailValid: false,
 			passwordValid: false,
-			formErrors: {username: '', email: '', password: ''},
+			formErrors: {username: '', email: '', password: '', response: ''},
 			formValid: false
 		};
 		this.service = new AuthService();
@@ -27,8 +27,10 @@ class SignupForm extends Component {
   
 	handleFormSubmit = e => {
 		e.preventDefault();
-		const {username, password, email} = this.state;
+		const {username, password, email, formErrors} = this.state;
 
+		this.setState({formErrors: {...formErrors, response: undefined}})
+		
 		this.service.signup(username, password, email)
 			.then(response => {
 				this.setState({
@@ -36,10 +38,12 @@ class SignupForm extends Component {
 					email: '',
 					password: ''
 				});
-				console.log('RESPONSE', response);
 				this.props.setUser({message: response.message, response: response.user});
 			})
-			.catch(error => console.log(error));
+			.catch(error => {
+				let response = error.response.data.message;
+				this.setState({formErrors: {...formErrors, response}})
+			});
 	};
 
 	handleChange (e) {
@@ -57,15 +61,15 @@ class SignupForm extends Component {
 		switch(fieldName) {
 			case 'username':
 				usernameValid = value.length <= 50;
-				fieldValidationErrors.username = usernameValid ? '' : ' is invalid (between 3 - 50 chars)';
+				fieldValidationErrors.username = usernameValid ? '' : 'Username is invalid (between 3 - 50 chars)';
 				break;
 			case 'email':
 				emailValid = value.match(/^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i);
-				fieldValidationErrors.email = emailValid ? '' : ' is invalid';
+				fieldValidationErrors.email = emailValid ? '' : 'Email is invalid';
 				break;
 			case 'password':
 				passwordValid = value.length >= 6;
-				fieldValidationErrors.password = passwordValid ? '': ' is too short';
+				fieldValidationErrors.password = passwordValid ? '': 'Password is too short';
 				break;
 			default:
 				break;

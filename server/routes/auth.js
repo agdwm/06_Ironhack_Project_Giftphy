@@ -1,18 +1,17 @@
-const express = require('express');
-const router = express.Router();
-const passport = require('passport');
-const { ensureLoggedIn, ensureLoggedOut } = require('connect-ensure-login');
-const User = require('../models/User');
-const colors = require('colors');
-
-// Bcrypt to encrypt passwords
 const bcrypt = require('bcrypt');
+const { ensureLoggedIn, ensureLoggedOut } = require('connect-ensure-login');
+const express = require('express');
+const {Conflict} = require('http-errors')
+const passport = require('passport');
+
+const User = require('../models/User');
+
+
+const router = express.Router();
 
 
 const login = (req, user) => {
 	return new Promise((resolve, reject) => {
-		console.log('req.login ')
-		console.log(user)
 
 		req.login(user, err => {
 			if (err) {
@@ -24,6 +23,7 @@ const login = (req, user) => {
 	})
 }
 
+
 // SIGNUP
 router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 	
@@ -32,9 +32,6 @@ router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 
 	// Check for non empty user or password
 	if (!username || !password || !email) {
-		console.log(colors.magenta('username', username));
-		console.log(colors.magenta('password', password));
-		console.log(colors.magenta('email', email));
 		next(new Error('You must provide valid credentials'));
 		return;
 	} else if(!email_pattern.test(email)){
@@ -47,17 +44,12 @@ router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 	}
   
 	// Check if user exists in DB
-	User.findOne({ $or: [{username: username}, {email: email}] })
+	User.findOne({ $or: [{username}, {email}] })
 		.then( foundUser => {
 			if (foundUser) {
-				if (foundUser.username && foundUser.username === username) {
-					throw new Error('Username already exists'); 
-						
-				} else if(foundUser.email && foundUser.email === email) {
-					throw new Error('Email already exists');     
-				}
+				throw new Conflict('Username or email already exists');
 			}
-
+			
 			const salt = bcrypt.genSaltSync(10);
 			const hashPass = bcrypt.hashSync(password, salt);
 
@@ -66,14 +58,12 @@ router.post('/signup', ensureLoggedOut(), (req, res, next) => {
 				password: hashPass,
 				email
 			}).save()
-				//.then( savedUser => login(req, savedUser)) // Login the user using passport
-				.then((user) => {
-					res.status(201).json({user:user, message: 'User created'})
-				})	
-				.catch(e => next(e));
-				
 		})
-		.catch(e => next(e));
+		//.then( savedUser => login(req, savedUser)) // Login the user using passport
+		.then((user) => {
+			res.status(201).json({user:user, message: 'User created'})
+		})	
+		.catch(next);
 });
 
 // LOGIN
@@ -107,8 +97,5 @@ router.get('/logout', ensureLoggedIn(), (req,res) => {
   	res.status(200).json({message:'User logged out'})
 });
 
-router.use((err, req, res, next) => {
-  	res.status(500).json({ message: err.message });
-})
 
 module.exports = router;
