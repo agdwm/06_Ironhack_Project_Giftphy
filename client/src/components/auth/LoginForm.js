@@ -1,11 +1,11 @@
-// auth/Signup.js
+// auth/Login.js
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import AuthService from "./AuthService";
 import {Button, ControlLabel, FormControl, FormGroup} from "react-bootstrap";
 import {FormErrors} from './AuthFormErrors';
 
-class SignupForm extends Component {
+class SignupLogin extends Component {
 	constructor(props, context) {
 		super(props, context);
 
@@ -13,13 +13,11 @@ class SignupForm extends Component {
 		this.handleFormSubmit = this.handleFormSubmit.bind(this);
 
 		this.state = {
-			username: '',
 			email: '',
 			password: '',
-			usernameValid: false,
 			emailValid: false,
 			passwordValid: false,
-			formErrors: {username: '', email: '', password: ''},
+			formErrors: {email: '', password: ''},
 			formValid: false
 		};
 		this.service = new AuthService();
@@ -27,17 +25,15 @@ class SignupForm extends Component {
   
 	handleFormSubmit = e => {
 		e.preventDefault();
-		const {username, password, email} = this.state;
+		const {password, email} = this.state;
 
-		this.service.signup(username, password, email)
+		this.service.signup(password, email)
 			.then(response => {
 				this.setState({
-					username: '',
 					email: '',
 					password: ''
 				});
-				console.log('RESPONSE', response);
-				this.props.setUser({message: response.message, response: response.user});
+				this.props.setUser(response.user);
 			})
 			.catch(error => console.log(error));
 	};
@@ -50,15 +46,10 @@ class SignupForm extends Component {
 
 	validateField(fieldName, value) {
 		let fieldValidationErrors = this.state.formErrors;
-		let usernameValid = this.state.usernameValid;
 		let emailValid = this.state.emailValid;
 		let passwordValid = this.state.passwordValid;
 	  
 		switch(fieldName) {
-			case 'username':
-				usernameValid = value.length <= 50;
-				fieldValidationErrors.username = usernameValid ? '' : ' is invalid (between 3 - 50 chars)';
-				break;
 			case 'email':
 				emailValid = value.match(/^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i);
 				fieldValidationErrors.email = emailValid ? '' : ' is invalid';
@@ -73,14 +64,13 @@ class SignupForm extends Component {
 
 		this.setState({
 			formErrors: fieldValidationErrors,
-			usernameValid: usernameValid,
 			emailValid: emailValid,
 			passwordValid: passwordValid
 		}, this.validateForm);
 	}
 	  
 	validateForm() {
-		this.setState({formValid: this.state.usernameValid && this.state.emailValid && this.state.passwordValid});
+		this.setState({formValid: this.state.emailValid && this.state.passwordValid});
 	}
   
 	errorClass(error) {
@@ -93,12 +83,7 @@ class SignupForm extends Component {
 				<header>
 					<h2 className="auth-form-title title">Welcome to Giftphy!</h2>
 				</header>
-				<form onSubmit={this.handleFormSubmit}>
-					<FormGroup controlId="username" className={`form-group ${this.errorClass(this.state.formErrors.username)}`}>
-						<ControlLabel bsClass="auth-label">Username:</ControlLabel>
-						<FormControl bsSize="large" type="text" name="username" value={this.state.username} placeholder="Username" onChange={this.handleChange}/>
-						<FormControl.Feedback />
-					</FormGroup>
+				<form onSubmit={()=> {this.handleFormSubmit()}}>
 
 					<FormGroup controlId="email" className={`form-group ${this.errorClass(this.state.formErrors.email)}`}>
 						<ControlLabel bsClass="auth-label">Email:</ControlLabel>
@@ -117,12 +102,12 @@ class SignupForm extends Component {
 					</div>
 
 					<div className="auth-form-footer">
-						<Button bsClass="btn btn-lg btn-block brand-btn" bsSize="large" block type="submit" disabled={!this.state.formValid}>Sign Up</Button>
+						<Button bsClass="btn btn-lg btn-block brand-btn" bsSize="large" block type="submit" disabled={!this.state.formValid}>Log In</Button>
 					</div>
 
 					<div className="auth-form-link">
 						<p>
-							<Link className="brand-link" to="/login">Do you have an account?</Link>
+							<Link className="brand-link" to="/signup">Create a new account</Link>
 						</p>
 					</div>
 				</form>
@@ -132,4 +117,4 @@ class SignupForm extends Component {
 }
   
 //render(<AuthForm />);
-export default SignupForm;
+export default SignupLogin;

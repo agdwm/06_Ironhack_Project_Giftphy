@@ -4,7 +4,7 @@ import './App.css';
 import { Switch, Route } from 'react-router-dom';
 import Navbar from './components/navBar/NavBar';
 import SignupForm from "./components/auth/SignupForm";
-import Login from './components/auth/Login';
+import LoginForm from './components/auth/LoginForm';
 import AuthService from './components/auth/AuthService';
 import Contents from './components/contents/Contents'
 
@@ -61,12 +61,12 @@ class App extends Component {
 			<div>
 				<section className="container">
 					<div className="row">
-					<div className="col-12">
-					<Switch>
-						<Route exact path='/signup' render={() => <SignupForm setUser={this.setTheUser}/>}/>
-						{/* <Route exact path='/login' render={() => <Login setUser={this.setTheUser}/>}/> */}
-					</Switch>
-					</div>
+						<div className="col-12">
+						<Switch>
+							<Route exact path='/signup' render={() => <SignupForm setUser={this.setTheUser}/>}/>
+							<Route exact path='/login' render={() => <LoginForm setUser={this.setTheUser}/>}/>
+						</Switch>
+						</div>
 					</div>
 				</section>
 			</div>
