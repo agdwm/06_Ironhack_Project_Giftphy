@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-
 const http = require('http');
-
 let app = require('../app');
 
 // catch 404 and render a not-found.hbs template
@@ -16,7 +14,11 @@ app.use((err, req, res, next) => {
 
   // only render if the error ocurred before sending the response
   if (!res.headersSent) {
-    res.status(500);
+	if (err.statusCode) {
+		return res.status(err.statusCode).json({message:err.message});
+	}
+
+	res.status(500);
     res.render('error');
   }
 });

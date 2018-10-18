@@ -8,8 +8,24 @@
 	font-weight: 600;
 }
 
+.brand-btn:active,
+.brand-btn:hover,
+.brand-btn:visited,
+.brand-btn:focus {
+	@extend .brand-btn;
+	color: $color-base-light;
+	background-color: darken($color-brand-orange, 5%);
+}
+
 .brand-btn:disabled,
 .brand-btn:disabled:hover {
 	@extend .brand-btn;
 	background-color: lighten($color-brand-orange, 10%);
+}
+
+.brand-link {
+	color: $color-brand-dark;
+	&:hover {
+		color: darken($color-brand-dark, 10%);
+	}
 }

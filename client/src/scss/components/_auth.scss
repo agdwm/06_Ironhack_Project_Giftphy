@@ -35,3 +35,13 @@
 	font-size: $font-size-xs;
 }
 
+.auth-form-link {
+	text-align: center;
+	padding-top: 1rem;
+	p {
+		font-size: $font-size-xs;
+		text-decoration: underline;
+	}
+	
+	
+}
