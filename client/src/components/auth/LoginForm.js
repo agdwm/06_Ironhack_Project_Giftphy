@@ -17,7 +17,7 @@ class SignupLogin extends Component {
 			password: '',
 			emailValid: false,
 			passwordValid: false,
-			formErrors: {email: '', password: ''},
+			formErrors: {email: '', password: '', response: ''},
 			formValid: false
 		};
 		this.service = new AuthService();
@@ -25,38 +25,47 @@ class SignupLogin extends Component {
   
 	handleFormSubmit = e => {
 		e.preventDefault();
-		const {password, email} = this.state;
+		const {password, email, formErrors} = this.state;
 
-		this.service.signup(password, email)
+		this.setState({formErrors: {...formErrors, response: undefined}})
+
+		this.service.login(password, email)
 			.then(response => {
 				this.setState({
 					email: '',
 					password: ''
 				});
-				this.props.setUser(response.user);
+				console.log('ERROR MESSAGE', response.message);
+				this.props.setUser({message: response.message, response: response.user});
 			})
-			.catch(error => console.log(error));
+			.catch(error => {
+				let response = error.response.data.message;
+				this.setState({formErrors: {...formErrors, response}})
+			});
 	};
 
 	handleChange (e) {
 		const name = e.target.name;
 		const value = e.target.value;
-		this.setState({[name]: value}, () => { this.validateField(name, value) });
+		this.setState({
+			[name]: value
+		}, () => { this.validateField(name, value) });
 	}
 
 	validateField(fieldName, value) {
 		let fieldValidationErrors = this.state.formErrors;
 		let emailValid = this.state.emailValid;
 		let passwordValid = this.state.passwordValid;
-	  
+		console.log('FIELD VALIDATE ERRORS', fieldValidationErrors);
+
 		switch(fieldName) {
 			case 'email':
 				emailValid = value.match(/^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i);
-				fieldValidationErrors.email = emailValid ? '' : ' is invalid';
+				fieldValidationErrors.email = emailValid ? '' : 'Email is invalid';
 				break;
 			case 'password':
 				passwordValid = value.length >= 6;
-				fieldValidationErrors.password = passwordValid ? '': ' is too short';
+				fieldValidationErrors.password = passwordValid ? '': 'Password is too short';
 				break;
 			default:
 				break;
@@ -83,7 +92,7 @@ class SignupLogin extends Component {
 				<header>
 					<h2 className="auth-form-title title">Welcome to Giftphy!</h2>
 				</header>
-				<form onSubmit={()=> {this.handleFormSubmit()}}>
+				<form onSubmit={this.handleFormSubmit}>
 
 					<FormGroup controlId="email" className={`form-group ${this.errorClass(this.state.formErrors.email)}`}>
 						<ControlLabel bsClass="auth-label">Email:</ControlLabel>
